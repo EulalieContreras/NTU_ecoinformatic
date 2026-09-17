@@ -1,0 +1,5 @@
+Identifiant national BSS|Ancien code national BSS|Code référentiel masse eau|Code masse eau|Masse eau|Date de début association|Code qualité association|Qualité association|Code auteur association|Auteur association|Commentaires|
+BSS002DRNS|09407X0393/P259|V5|DG353|Alluvions des plaines du Comtat (Ouvèze)|16/12/2025|5|Bonne||BRGM|Forage de 12 m, crépiné de 4 à 12 m au sein des alluvions.|
+BSS002DRNS|09407X0393/P259|V4|DG353|Alluvions des plaines du Comtat (Ouvèze)|12/07/2024|5|Bonne|231|BRGM|Forage de 12 m, crépiné de 4 à 12 m au sein des alluvions.|
+BSS002DRNS|09407X0393/P259|V2|DG353|Alluvions des plaines du Comtat (Ouvèze)|13/10/2015|2|Interprété|296|BRGM|3 - Amélioration des connaissances|
+BSS002DRNS|09407X0393/P259|V1|DG324|Alluvions du Rhône du confluent de l'Isère à la Durance + alluvions basses vallée Ardèche, Cèze|01/01/1900|||296|BRGM||

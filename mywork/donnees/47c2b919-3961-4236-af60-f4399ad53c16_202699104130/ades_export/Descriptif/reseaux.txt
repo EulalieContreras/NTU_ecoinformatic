@@ -1,0 +1,5 @@
+Identifiant national BSS|Ancien code national BSS|Code SANDRE réseau|Date de début|Date de fin|Nom réseau
+BSS002PXUN|BSS002PXUN/X|0600000037|29/09/2017||Réseau de surveillance de l'état quantitatif des eaux souterraines de la région Provence-Alpes-Côte d'Azur (MO BRGM)
+BSS002PXUN|BSS002PXUN/X|0600000004|29/09/2017||Réseau de suivi quantitatif des eaux souterraines du bassin Rhône-Méditerranée
+BSS002PXUN|BSS002PXUN/X|0000000073|29/09/2017||Réseau national de suivi quantitatif des eaux souterraines sous MO BRGM
+BSS002PXUN|BSS002PXUN/X|0000000029|29/09/2017||Réseau patrimonial national de suivi quantitatif des eaux souterraines

@@ -1,0 +1,7 @@
+Identifiant national BSS|Ancien code national BSS|Code SANDRE réseau|Date de début|Date de fin|Nom réseau
+BSS002DRNS|09407X0393/P259|0600000233|01/04/2004||Surveillance de l'état quantitatif des eaux souterraines du bassin Rhône et cours d'eaux côtiers méditérranéen
+BSS002DRNS|09407X0393/P259|0600000037|03/04/2002||Réseau de surveillance de l'état quantitatif des eaux souterraines de la région Provence-Alpes-Côte d'Azur (MO BRGM)
+BSS002DRNS|09407X0393/P259|0600000004|03/04/2002||Réseau de suivi quantitatif des eaux souterraines du bassin Rhône-Méditerranée
+BSS002DRNS|09407X0393/P259|0000000073|03/04/2002||Réseau national de suivi quantitatif des eaux souterraines sous MO BRGM
+BSS002DRNS|09407X0393/P259|0000000070|01/04/2004||Surveillance de l'état quantitatif des eaux souterraines de la France
+BSS002DRNS|09407X0393/P259|0000000029|03/04/2002||Réseau patrimonial national de suivi quantitatif des eaux souterraines

@@ -1,0 +1,2 @@
+Identifiant national BSS|Ancien code national BSS|Code entité BDLISA|Entité BDLISA|Date de début association|Code qualité association|Qualité association|Code auteur association|Auteur association|Commentaires|
+BSS002DRNS|09407X0393/P259|712ID01|Alluvions de l'Ouvèze|12/07/2024|5|Bonne|231|BRGM|Forage de 12 m, crépiné de 4 à 12 m au sein des alluvions.|

@@ -1,0 +1,3 @@
+Identifiant national BSS|Ancien code national BSS|Date début|Date fin|Code mode mesure|Mode mesure|Périodicité mesure|Précision|Code périodicité acquisition|Périodicité acquisition|Commentaires|X_WGS84|Y_WGS84|
+BSS002DSGS|09408X0182/P|10/12/2004|16/11/2016|4|Numérique télétransmis|0001200||1|Continu|Thalimède OTT n° série 176453. Arrêt des mesures sur ce point le 15/11/2016|4.95859081867764|43.9912345531454|
+BSS002DSGS|09408X0182/P|02/01/1998|10/12/2004|0|Inconnu|0001200||0|Inconnu||4.95859081867764|43.9912345531454|

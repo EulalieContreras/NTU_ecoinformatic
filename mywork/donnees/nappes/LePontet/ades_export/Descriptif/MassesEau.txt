@@ -1,0 +1,5 @@
+Identifiant national BSS|Ancien code national BSS|Code référentiel masse eau|Code masse eau|Masse eau|Date de début association|Code qualité association|Qualité association|Code auteur association|Auteur association|Commentaires|
+BSS002DRNR|09407X0392/156038|V5|DG382|Alluvions du Rhône du défilé de Donzère au confluent de la Durance et alluvions de la basse vallée Ardèche|16/12/2025|5|Bonne||BRGM||
+BSS002DRNR|09407X0392/156038|V4|DG382|Alluvions du Rhône du défilé de Donzère au confluent de la Durance et alluvions de la basse vallée Ardèche|18/01/2021|5|Bonne|231|BRGM||
+BSS002DRNR|09407X0392/156038|V2|DG382|Alluvions du Rhône du défilé de Donzère au confluent de la Durance et alluvions de la basse vallée Ardèche|13/10/2015|2|Interprété|296|BRGM|3 - Amélioration des connaissances|
+BSS002DRNR|09407X0392/156038|V1|DG324|Alluvions du Rhône du confluent de l'Isère à la Durance + alluvions basses vallée Ardèche, Cèze|01/01/1900|||296|BRGM||

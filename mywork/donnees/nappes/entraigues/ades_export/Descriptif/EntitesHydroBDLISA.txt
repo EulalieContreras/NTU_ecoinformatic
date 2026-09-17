@@ -1,0 +1,2 @@
+Identifiant national BSS|Ancien code national BSS|Code entité BDLISA|Entité BDLISA|Date de début association|Code qualité association|Qualité association|Code auteur association|Auteur association|Commentaires|
+BSS002DSGS|09408X0182/P|712ID03|Alluvions des Sorgues et de la Nesque|29/11/2022|2|Interprété||BRGM||

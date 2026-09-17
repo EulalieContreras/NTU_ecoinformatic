@@ -1,0 +1,2 @@
+Identifiant national BSS|Ancien code national BSS|Code entité BDRHFV1|Entité BDRHFV1|Date de début association|Code qualité association|Qualité association|Code auteur association|Auteur association|Commentaires|
+BSS002DPFQ|09404X0219/MONTEU|228|MIOCENE DU COMTAT|01/01/1900|||231|BRGM||

@@ -1,0 +1,2 @@
+Identifiant national BSS|Ancien code national BSS|Code entité BDLISA|Entité BDLISA|Date de début association|Code qualité association|Qualité association|Code auteur association|Auteur association|Commentaires|
+BSS002DRNR|09407X0392/156038|712JB01|Alluvions anciennes et terrasses à l'est d'Avignon|29/11/2022|2|Interprété||BRGM||

@@ -1,0 +1,2 @@
+Identifiant national BSS|Ancien code national BSS|Code entité BDLISA|Entité BDLISA|Date de début association|Code qualité association|Qualité association|Code auteur association|Auteur association|Commentaires|
+BSS002PXUN|BSS002PXUN/X|561AA00|NV3 absent, nom de l'entité NV2 : Molasse miocène du Comtat Venaissin|18/07/2024|5|Bonne|231|BRGM|Forage de 100 m de profondeur, crépiné de 50 à 100 m au sein des argiles et des molasses.|

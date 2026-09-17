@@ -1,0 +1,5 @@
+Identifiant national BSS|Ancien code national BSS|Code référentiel masse eau|Code masse eau|Masse eau|Date de début association|Code qualité association|Qualité association|Code auteur association|Auteur association|Commentaires|
+BSS002DPFQ|09404X0219/MONTEU|V5|DG218|Molasses miocènes du Comtat|16/12/2025|5|Bonne||BRGM|Méthode de rattachement : Coupe géologique|
+BSS002DPFQ|09404X0219/MONTEU|V4|DG218|Molasses miocènes du Comtat|18/01/2021|5|Bonne|231|BRGM|Méthode de rattachement : Coupe géologique|
+BSS002DPFQ|09404X0219/MONTEU|V2|DG218|Molasses miocènes du Comtat|18/10/2016|2|Interprété|296|BRGM|Méthode de rattachement : Coupe géologique|
+BSS002DPFQ|09404X0219/MONTEU|V1|DG301|Alluvions des plaines du Comtat et des Sorgues|13/10/2015|2|Interprété|296|BRGM|3 - Amélioration des connaissances|

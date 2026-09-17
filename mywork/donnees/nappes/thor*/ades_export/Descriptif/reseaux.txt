@@ -1,0 +1,9 @@
+Identifiant national BSS|Ancien code national BSS|Code SANDRE réseau|Date de début|Date de fin|Nom réseau
+BSS002DSBP|09408X0052/PU|0600000235|01/01/2021||Contrôle de surveillance de l'état chimique des eaux souterraines du bassin Rhône et cours d'eau côtiers méditerranéens
+BSS002DSBP|09408X0052/PU|0600000233|05/10/1954||Surveillance de l'état quantitatif des eaux souterraines du bassin Rhône et cours d'eaux côtiers méditérranéen
+BSS002DSBP|09408X0052/PU|0600000037|01/03/1978||Réseau de surveillance de l'état quantitatif des eaux souterraines de la région Provence-Alpes-Côte d'Azur (MO BRGM)
+BSS002DSBP|09408X0052/PU|0600000004|01/03/1978||Réseau de suivi quantitatif des eaux souterraines du bassin Rhône-Méditerranée
+BSS002DSBP|09408X0052/PU|0000000073|01/03/1978||Réseau national de suivi quantitatif des eaux souterraines sous MO BRGM
+BSS002DSBP|09408X0052/PU|0000000071|01/01/2021||Contrôle de surveillance de l'état chimique des eaux souterraines de la France
+BSS002DSBP|09408X0052/PU|0000000070|05/10/1954||Surveillance de l'état quantitatif des eaux souterraines de la France
+BSS002DSBP|09408X0052/PU|0000000029|01/03/1978||Réseau patrimonial national de suivi quantitatif des eaux souterraines

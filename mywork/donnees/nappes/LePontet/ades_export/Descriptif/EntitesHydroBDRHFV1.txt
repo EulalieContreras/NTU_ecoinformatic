@@ -1,0 +1,2 @@
+Identifiant national BSS|Ancien code national BSS|Code entité BDRHFV1|Entité BDRHFV1|Date de début association|Code qualité association|Qualité association|Code auteur association|Auteur association|Commentaires|
+BSS002DRNR|09407X0392/156038|156|PLAINE DE SORGUES|01/01/1900|||231|BRGM||

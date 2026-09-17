@@ -1,0 +1,2 @@
+Identifiant national BSS|Ancien code national BSS|Code mode dépouillement|Mode dépouillement|Date début|Date fin|Commentaires|X_WGS84|Y_WGS84|
+BSS002DSBP|09408X0052/PU|7|Maximum journalier|15/03/1978|||4.98793567928035|43.9337753737225|

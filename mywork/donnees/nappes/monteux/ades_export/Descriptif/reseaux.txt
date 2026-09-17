@@ -1,0 +1,8 @@
+Identifiant national BSS|Ancien code national BSS|Code SANDRE réseau|Date de début|Date de fin|Nom réseau
+BSS002DPFQ|09404X0219/MONTEU|0600000233|03/09/2002||Surveillance de l'état quantitatif des eaux souterraines du bassin Rhône et cours d'eaux côtiers méditérranéen
+BSS002DPFQ|09404X0219/MONTEU|0600000037|01/01/1997||Réseau de surveillance de l'état quantitatif des eaux souterraines de la région Provence-Alpes-Côte d'Azur (MO BRGM)
+BSS002DPFQ|09404X0219/MONTEU|0600000004|01/01/1997||Réseau de suivi quantitatif des eaux souterraines du bassin Rhône-Méditerranée
+BSS002DPFQ|09404X0219/MONTEU|0000000146|21/01/1997||Réseau national de suivi quantitatif des eaux souterraines en lien avec le changement climatique
+BSS002DPFQ|09404X0219/MONTEU|0000000073|01/01/1997||Réseau national de suivi quantitatif des eaux souterraines sous MO BRGM
+BSS002DPFQ|09404X0219/MONTEU|0000000070|03/09/2002||Surveillance de l'état quantitatif des eaux souterraines de la France
+BSS002DPFQ|09404X0219/MONTEU|0000000029|01/01/1997||Réseau patrimonial national de suivi quantitatif des eaux souterraines

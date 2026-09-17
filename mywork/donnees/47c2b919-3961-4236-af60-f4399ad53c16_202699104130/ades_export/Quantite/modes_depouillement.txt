@@ -1,0 +1,2 @@
+Identifiant national BSS|Ancien code national BSS|Code mode dépouillement|Mode dépouillement|Date début|Date fin|Commentaires|X_WGS84|Y_WGS84|
+BSS002PXUN|BSS002PXUN/X|7|Maximum journalier|29/09/2017|||5.06782750577106|44.0604437963468|

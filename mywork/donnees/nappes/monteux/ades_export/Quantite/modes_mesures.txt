@@ -1,0 +1,4 @@
+Identifiant national BSS|Ancien code national BSS|Date début|Date fin|Code mode mesure|Mode mesure|Périodicité mesure|Précision|Code périodicité acquisition|Périodicité acquisition|Commentaires|X_WGS84|Y_WGS84|
+BSS002DPFQ|09404X0219/MONTEU|21/01/1997|07/12/2004|0|Inconnu|0001200||0|Inconnu||4.97662354957194|44.0200595244107|
+BSS002DPFQ|09404X0219/MONTEU|16/12/2015||4|Numérique télétransmis|0000100|1|2|Pas de temps fixe|Pose d'un Orpeus Mini + ITC à la place du Thalimèdes|4.97662354957194|44.0200595244107|
+BSS002DPFQ|09404X0219/MONTEU|07/12/2004|16/12/2015|4|Numérique télétransmis|0001200|1|1|Continu|Matériel Thalimèdes OTT n° série 176458|4.97662354957194|44.0200595244107|

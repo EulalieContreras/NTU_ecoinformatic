@@ -1,0 +1,5 @@
+Identifiant national BSS|Ancien code national BSS|Code référentiel masse eau|Code masse eau|Masse eau|Date de début association|Code qualité association|Qualité association|Code auteur association|Auteur association|Commentaires|
+BSS002PXUN|BSS002PXUN/X|V5|DG218|Molasses miocènes du Comtat|16/12/2025|5|Bonne||BRGM|Forage de 100 m de profondeur, crépiné de 50 à 100 m au sein des argiles et des molasses.|
+BSS002PXUN|BSS002PXUN/X|V4|DG218|Molasses miocènes du Comtat|18/07/2024|5|Bonne|231|BRGM|Forage de 100 m de profondeur, crépiné de 50 à 100 m au sein des argiles et des molasses.|
+BSS002PXUN|BSS002PXUN/X|V3|DG218|Molasses miocènes du Comtat|17/12/2018|1|Positionnement géo||BRGM||
+BSS002PXUN|BSS002PXUN/X|V2|DG218|Molasses miocènes du Comtat|03/11/2017|1|Positionnement géo|296|BRGM||

@@ -1,0 +1,2 @@
+Identifiant national BSS|Ancien code national BSS|Code mode dépouillement|Mode dépouillement|Date début|Date fin|Commentaires|X_WGS84|Y_WGS84|
+BSS002DPFQ|09404X0219/MONTEU|7|Maximum journalier|21/01/1997|||4.97662354957194|44.0200595244107|

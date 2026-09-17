@@ -1,0 +1,2 @@
+Identifiant national BSS|Ancien code national BSS|Date début|Date fin|Code mode mesure|Mode mesure|Périodicité mesure|Précision|Code périodicité acquisition|Périodicité acquisition|Commentaires|X_WGS84|Y_WGS84|
+BSS002PXUN|BSS002PXUN/X|01/09/2017||4|Numérique télétransmis|0000100|50|3|Pas de temps variable|OTT Orpheus Mini + ITC|5.06782750577106|44.0604437963468|
