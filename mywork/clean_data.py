@@ -1,5 +1,6 @@
 import pandas as pd
 import unicodedata
+import numpy as np
 
 ##### DATA IMPORTATION
 
@@ -17,7 +18,7 @@ dico_city_GW = {nappe_1['Identifiant national BSS'].iloc[0]: 'ENTRAIGUES', nappe
 
 nappes = pd.concat([nappe_1, nappe_2, nappe_3, nappe_4], axis=0, ignore_index=True)
 
-nappes['Date de la mesure'] = pd.to_datetime(nappes['Date de la mesure'], errors='coerce', dayfirst=False)
+nappes['Date de la mesure'] = pd.to_datetime(nappes['Date de la mesure'], errors='coerce', dayfirst=True)
 nappes['Date de la mesure'] = nappes['Date de la mesure'].dt.floor('D')
 nappes = nappes[ground_columns]
 nappes = nappes[(~nappes['Date de la mesure'].isna()) & (~nappes['Identifiant national BSS'].isna())]
@@ -31,7 +32,26 @@ groundwater1 = nappes[(nappes['date'] >= '2002-04-03') & (nappes['date'] <= '201
 groundwater2 = nappes[(nappes['date'] >= '2016-04-03') & (nappes['date'] <= '2024-12-31')]
 groundwater2 = groundwater2[~(groundwater2['city']=='ENTRAIGUES')] 
 
+missing_rows = []
+for station in groundwater1['station_ID'].unique():
+    sous_df = groundwater1[groundwater1['station_ID'] == station]
+    date_range = pd.date_range(start=sous_df['date'].min(), end=sous_df['date'].max(), freq='D')
+    missing_dates = date_range[~date_range.isin(sous_df['date'])]
+    missing_rows.append(pd.DataFrame({'station_ID': station, 'date': missing_dates, 'relative_depth': np.nan, 'NGF_depth': np.nan, 'X_coordonate': sous_df['X_coordonate'].iloc[0], 'Y_coordonate': sous_df['Y_coordonate'].iloc[0]}))
+groundwater1 = pd.concat([groundwater1] + missing_rows, axis=0, ignore_index=True)
+groundwater1 = groundwater1.sort_values(by=['station_ID', 'date']).reset_index(drop=True)
+
 groundwater1.to_csv('mywork/donnees/groundwater_02-13.csv', index=False, sep=';')
+
+missing_rows = []
+for station in groundwater2['station_ID'].unique():
+    sous_df = groundwater2[groundwater2['station_ID'] == station]
+    date_range = pd.date_range(start=sous_df['date'].min(), end=sous_df['date'].max(), freq='D')
+    missing_dates = date_range[~date_range.isin(sous_df['date'])]
+    missing_rows.append(pd.DataFrame({'station_ID': station, 'date': missing_dates, 'relative_depth': np.nan, 'NGF_depth': np.nan, 'X_coordonate': sous_df['X_coordonate'].iloc[0], 'Y_coordonate': sous_df['Y_coordonate'].iloc[0]}))
+groundwater2 = pd.concat([groundwater2] + missing_rows, axis=0, ignore_index=True)
+groundwater2 = groundwater2.sort_values(by=['station_ID', 'date']).reset_index(drop=True)
+
 groundwater2.to_csv('mywork/donnees/groundwater_16-24.csv', index=False, sep=';')
 
 ###SURFACE WATER
@@ -56,7 +76,7 @@ hauteur_min = hauteur_min[surface_columns]
 hauteur_min.columns = ['station_ID', 'date', 'min_height']
 
 for df in (debit_moyen, debit_min, debit_max, hauteur_min, hauteur_max):
-    df['date'] = pd.to_datetime(df['date'], errors='coerce', dayfirst=True)
+    df['date'] = pd.to_datetime(df['date'], errors='coerce', format='%Y-%m-%d %H:%M:%S')
     df['date'] = df['date'].dt.floor('D')
     df.drop_duplicates(subset=['station_ID','date'], inplace=True)
     df['station_ID'] = df['station_ID'].astype(str).str.strip()
@@ -77,9 +97,28 @@ rivers['city'] = rivers['station_ID'].map(dico_city_rivers)
 
 rivers1 = rivers[(rivers['date'] >= '2002-04-03') & (rivers['date'] <= '2013-11-27')]
 rivers1 = rivers1[~(rivers1['city']=='BEDARRIDES')]
-rivers2 = rivers[(rivers['date'] >= '2016-04-03') & (rivers['date'] <= '2024-12-31')]
+rivers2 = rivers[(rivers['date'] >= '2016-03-04') & (rivers['date'] <= '2024-12-31')]
+
+missing_rows = []
+for station in rivers1['station_ID'].unique():
+    sous_df = rivers1[rivers1['station_ID'] == station]
+    date_range = pd.date_range(start=sous_df['date'].min(), end=sous_df['date'].max(), freq='D')
+    missing_dates = date_range[~date_range.isin(sous_df['date'])]
+    missing_rows.append(pd.DataFrame({'station_ID': station, 'date': missing_dates, 'max_flow': np.nan, 'min_flow': np.nan, 'mean_flow': np.nan, 'min_height': np.nan, 'max_height': np.nan}))
+rivers1 = pd.concat([rivers1] + missing_rows, axis=0, ignore_index=True)
+rivers1 = rivers1.sort_values(by=['station_ID', 'date']).reset_index(drop=True)
 
 rivers1.to_csv('mywork/donnees/rivers_02-13.csv', index=False, sep=';')
+
+missing_rows = []
+for station in rivers2['station_ID'].unique():
+    sous_df = rivers2[rivers2['station_ID'] == station]
+    date_range = pd.date_range(start=sous_df['date'].min(), end=sous_df['date'].max(), freq='D')
+    missing_dates = date_range[~date_range.isin(sous_df['date'])]
+    missing_rows.append(pd.DataFrame({'station_ID': station, 'date': missing_dates, 'max_flow': np.nan, 'min_flow': np.nan, 'mean_flow': np.nan, 'min_height': np.nan, 'max_height': np.nan}))
+rivers2 = pd.concat([rivers2] + missing_rows, axis=0, ignore_index=True)
+rivers2 = rivers2.sort_values(by=['station_ID', 'date']).reset_index(drop=True)
+
 rivers2.to_csv('mywork/donnees/rivers_16-24.csv', index=False, sep=';')
 
 ### METEO
@@ -94,13 +133,13 @@ def norm_city(s):
 meteo_0 = pd.read_csv('mywork/donnees/meteo/precipitation_bedarrides/export_meteo_series.csv', sep=';', skiprows = 1)
 meteo_0 = meteo_0[['Code du site météorologique', 'Date de l\'observation météorologique', 'Résultat de l\'observation météorologique']]
 meteo_0.columns = ['station_ID', 'date', 'precipitation']
-meteo_0['date'] = pd.to_datetime(meteo_0['date'], errors='coerce', dayfirst=False)
+meteo_0['date'] = pd.to_datetime(meteo_0['date'], errors='coerce', format='%Y-%m-%d %H:%M:%S')
 meteo_0['date'] = meteo_0['date'].dt.floor('D')
 meteo_0['station_ID'] = meteo_0['station_ID'].astype(str).str.strip()
 doc = {meteo_0['station_ID'].iloc[0]: 'BEDARRIDES'}
 meteo_0['city'] = meteo_0['station_ID'].map(doc)
 
-meteo_1 = pd.read_csv('mywork/donnees/meteo/meteo_RRTVent.csv', sep=';', compression='gzip', dayfirst=False)
+meteo_1 = pd.read_csv('mywork/donnees/meteo/meteo_RRTVent.csv', sep=';', compression='gzip')
 meteo_1 = meteo_1[['NUM_POSTE', 'NOM_USUEL', 'LAT', 'LON', 'ALTI', 'AAAAMMJJ', 'RR', 'TNTXM', 'TAMPLI', 'TNSOL', 'DRR']]
 meteo_1.columns = ['station_ID', 'city', 'latitude', 'longitude', 'altitude', 'date', 'precipitation', 'mean_temp', 'temp_amplitude', 'temp_at10cmaboveground', 'duration_precipitation'] #in mm for precipitation, in °C for temperatures and in mn for duration of precipitation
 meteo_1['date'] = pd.to_datetime(meteo_1['date'].astype(str), format='%Y%m%d', errors='coerce')
@@ -109,7 +148,7 @@ meteo_1['station_ID'] = meteo_1['station_ID'].astype(str).str.strip()
 meteo_1['city'] = meteo_1['city'].apply(norm_city)
 meteo_1 = meteo_1[(meteo_1['city'] == 'ISLE SUR SORGUE') | (meteo_1['city'] == 'JONQUERETTES')]
 
-meteo_2 = pd.read_csv('mywork/donnees/meteo/meteo.csv', sep=';', compression='gzip', dayfirst=False)
+meteo_2 = pd.read_csv('mywork/donnees/meteo/meteo.csv', sep=';', compression='gzip')
 meteo_2 = meteo_2[['NUM_POSTE', 'NOM_USUEL', 'LAT', 'LON', 'ALTI', 'AAAAMMJJ', 'ETPMON', 'ETPGRILLE', 'ORAG', 'PMERM', 'UM']]
 meteo_2.columns = ['station_ID', 'city', 'latitude', 'longitude', 'altitude', 'date', 'calculated_evapotranspiration', 'measured_evapotranspiration', 'storm_occurrence', 'sea_mean_pressure', 'mean_relative_humidity'] #in mm for evapotranspirations, 0 or 1 for orage occurence, in hPa for sea mean pressure and in % for relative humidity
 meteo_2['date'] = pd.to_datetime(meteo_2['date'].astype(str), format='%Y%m%d', errors='coerce')
@@ -150,7 +189,26 @@ meteo1 = meteo1[~(meteo1['city']=='BEDARRIDES')]
 meteo2 = meteo[(meteo['date'] >= '2016-04-03') & (meteo['date'] <= '2024-12-31')]
 meteo2 = meteo2[~(meteo2['city']=='JONQUERETTES')]
 
+missing_rows = []
+for station in meteo1['station_ID'].unique():
+    sous_df = meteo1[meteo1['station_ID'] == station]
+    date_range = pd.date_range(start=sous_df['date'].min(), end=sous_df['date'].max(), freq='D')
+    missing_dates = date_range[~date_range.isin(sous_df['date'])]
+    missing_rows.append(pd.DataFrame({'station_ID': station, 'date': missing_dates, 'city': sous_df['city'].iloc[0], 'longitude': sous_df['longitude'].iloc[0], 'latitude': sous_df['latitude'].iloc[0], 'altitude': sous_df['altitude'].iloc[0], 'precipitation': np.nan, 'duration_precipitation': np.nan, 'mean_temp': np.nan, 'temp_amplitude': np.nan, 'temp_at10cmaboveground': np.nan, 'calculated_evapotranspiration': np.nan, 'measured_evapotranspiration': np.nan, 'storm_occurrence': np.nan, 'sea_mean_pressure': np.nan, 'mean_relative_humidity': np.nan}))
+meteo1 = pd.concat([meteo1] + missing_rows, axis=0, ignore_index=True)
+meteo1 = meteo1.sort_values(by=['station_ID', 'date']).reset_index(drop=True)
+
 meteo1.to_csv('mywork/donnees/meteo_02-13.csv', index=False, sep=';')
+
+missing_rows = []
+for station in meteo2['station_ID'].unique():
+    sous_df = meteo2[meteo2['station_ID'] == station]
+    date_range = pd.date_range(start=sous_df['date'].min(), end=sous_df['date'].max(), freq='D')
+    missing_dates = date_range[~date_range.isin(sous_df['date'])]
+    missing_rows.append(pd.DataFrame({'station_ID': station, 'date': missing_dates, 'city': sous_df['city'].iloc[0], 'longitude': sous_df['longitude'].iloc[0], 'latitude': sous_df['latitude'].iloc[0], 'altitude': sous_df['altitude'].iloc[0], 'precipitation': np.nan, 'duration_precipitation': np.nan, 'mean_temp': np.nan, 'temp_amplitude': np.nan, 'temp_at10cmaboveground': np.nan, 'calculated_evapotranspiration': np.nan, 'measured_evapotranspiration': np.nan, 'storm_occurrence': np.nan, 'sea_mean_pressure': np.nan, 'mean_relative_humidity': np.nan}))
+meteo2 = pd.concat([meteo2] + missing_rows, axis=0, ignore_index=True)
+meteo2 = meteo2.sort_values(by=['station_ID', 'date']).reset_index(drop=True)
+
 meteo2.to_csv('mywork/donnees/meteo_16-24.csv', index=False, sep=';')
 
 
