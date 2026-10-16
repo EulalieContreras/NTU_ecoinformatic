@@ -17,8 +17,6 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 
 
 ### Parameters
-lib = "1 500"
-pred = "501 1000"
 E_values = range(2, 9)
 window_ = 60
 theta_values = np.arange(0, 3.1, 0.1)
@@ -101,16 +99,17 @@ def detrend_mult(series):
 
 ### Functions of EDM
 
-def run_simplex(ts, E, lib_range, pred_range):
+def run_simplex(ts, E, lib, pred, Tp=1):
     df = pd.DataFrame({'Time': np.arange(1, len(ts) + 1), 'X': ts})
     preds = Simplex(
         dataFrame=df,
-        lib=lib_range,
-        pred=pred_range,
+        lib=lib,
+        pred=pred,
         E=E,
         columns="X",
         target="X",
-        showPlot=False
+        showPlot=False, 
+        Tp=Tp
     )
     # Verifying the columns exist
     if 'Observations' not in preds or 'Predictions' not in preds:
@@ -123,14 +122,14 @@ def run_simplex(ts, E, lib_range, pred_range):
     rho = preds.loc[valid, ['Observations', 'Predictions']].corr().iloc[0, 1]
     return rho
 
-def evaluate_dimension(ts, lib=lib, pred=pred):
+def evaluate_dimension(ts, lib, pred, Tp=1):
     data = []
     for E in E_values:
-        rho = run_simplex(ts, E, lib, pred)
+        rho = run_simplex(ts, E, lib, pred, Tp=Tp)
         data.append({'E': E, 'rho': rho})
     return pd.DataFrame(data)
 
-def run_smap(ts, E, lib=lib, pred=pred, theta_values=theta_values):
+def run_smap(ts, E, lib, pred, theta_values=theta_values, Tp=1):
     ts = pd.Series(ts).dropna().reset_index(drop=True)
     df = pd.DataFrame({'Time': np.arange(1, len(ts) + 1), 'X': ts})    
     results = []
@@ -144,7 +143,8 @@ def run_smap(ts, E, lib=lib, pred=pred, theta_values=theta_values):
             columns="X",
             target="X",
             theta=theta,
-            showPlot=False
+            showPlot=False,
+            Tp=Tp
         )
         # SMap may return a DataFrame or a dict-like object; handle both
         if isinstance(res, pd.DataFrame):
@@ -170,7 +170,7 @@ def run_smap(ts, E, lib=lib, pred=pred, theta_values=theta_values):
         results.append({'theta': theta, 'rho': rho})
     return pd.DataFrame(results)
 
-def find_best_E_ccm(df, col_lib, col_target, Tp=0, libSizes="10 100 10"):
+def find_best_E_ccm(df, col_lib, col_target, seed=42): # Tp = -1 to avoid overfitting ? (make more research on that)
     df = df.copy().reset_index(drop=True)
     if 'date' not in df.columns:
         df.insert(0, 'date', np.arange(len(df)))
@@ -178,18 +178,18 @@ def find_best_E_ccm(df, col_lib, col_target, Tp=0, libSizes="10 100 10"):
 
     results = []
     col_name = f"{col_lib}:{col_target}"
-
+    lib_size = max(50, min(len(df) // 2, 1000))
     for E in range(2, 9):
         out = CCM(
             dataFrame=df,
             columns=col_lib,
             target=col_target,
             E=E,
-            Tp=Tp,
-            libSizes=libSizes,  # libSize min max step
-            sample=1,
+            Tp=-1,
+            libSizes=str(lib_size),  # libSize min max step
+            sample=5, #comment choisir cette valeur ? 
             showPlot=False, 
-            seed = 2301
+            seed = seed
         )
 
         if col_name not in out.columns:
@@ -204,19 +204,20 @@ def find_best_E_ccm(df, col_lib, col_target, Tp=0, libSizes="10 100 10"):
 
     return max(results, key=lambda x: x[1])[0]
 
-def find_best_E(df, col_lib, col_target, Tp=0, lib_range=lib, pred_range=pred):
+def find_best_E(df, col_lib, col_target, lib, pred, Tp=1):
     df = _normalize_pyedm_time(df)
     results = []
 
     for E in range(2,9):
         preds = Simplex(
             dataFrame=df,
-            lib=lib_range,
-            pred=pred_range,
+            lib=lib,
+            pred=pred,
             E=E,
             columns=col_lib,
             target=col_target,
-            showPlot=False
+            showPlot=False, 
+            Tp=Tp
         )
         # Verifying the columns exist
         if 'Observations' not in preds or 'Predictions' not in preds:
@@ -231,7 +232,7 @@ def find_best_E(df, col_lib, col_target, Tp=0, lib_range=lib, pred_range=pred):
 
     return max(results, key=lambda x: x[1])[0]
 
-def run_ccm_bootstrap(df, col_lib, col_trg, E, libs = lib, samples=200, seed=2301, Tp=0):
+def run_ccm_bootstrap(df, col_lib, col_trg, E, libs, samples=10, seed=2301, Tp=0):
     df = df.copy().reset_index(drop=True)
     if 'date' not in df.columns:
         df.insert(0, 'date', np.arange(len(df)))
@@ -252,26 +253,26 @@ def summarize_trend(df_rho, col_name):
         tau[q] = kendalltau(stats.index.astype(float), stats[q]).correlation
     return stats, tau
 
-def final_ccm(df, col_lib, col_target, libs=lib, Tp=0):
+def final_ccm(df, col_lib, col_target, libs, Tp=0, samples=10, seed_E = 42, seed_finale = 2301):
     # pyEDM requires the first column to be a time/index column, so we keep date first.
     df_clean = df.copy().reset_index(drop=True)
     if 'date' not in df_clean.columns:
         df_clean.insert(0, 'date', np.arange(len(df_clean)))
     df_clean = df_clean[['date', col_lib, col_target]].dropna(subset=[col_lib, col_target]).reset_index(drop=True)
-    E_best = find_best_E_ccm(df_clean, col_lib, col_target, Tp=Tp)
-    df_rho = run_ccm_bootstrap(df_clean, col_lib, col_target, E_best, libs, Tp=Tp)
+    E_best = find_best_E_ccm(df_clean, col_lib, col_target, seed=seed_E)
+    df_rho = run_ccm_bootstrap(df_clean, col_lib, col_target, E_best, libs, samples=samples, Tp=Tp, seed=seed_finale)
     stats, tau = summarize_trend(df_rho, "rho")
     return stats, tau
 
-def surrogate(df, col_lib, col_target, num=200, libs=lib, comparaison=None):
+def surrogate(df, col_lib, col_target, num, libs, comparaison=None, Tp=0, seed_ccm=2301, seed_E=42, seed_surrogate=0):
     df_sur = pd.DataFrame({'date': df['date'], f'{col_lib}': df[col_lib]})
 
-    sur = SurrogateData(df_sur, col_lib, numSurrogates=num, method='seasonal', alpha=0, smooth=0.8)
+    sur = SurrogateData(df_sur, col_lib, numSurrogates=num, method='seasonal', alpha=0, smooth=0.8, seed=seed_surrogate)
     rho = []
     sur = sur.merge(df[['date', col_target]], on='date', how='outer')
 
     for i in range(1, num+1):
-        stats, tau = final_ccm(sur, f'{col_lib}_{i}', col_target, libs=libs, Tp=0)
+        stats, tau = final_ccm(sur, f'{col_lib}_{i}', col_target, libs=libs, Tp=Tp, seed_finale=seed_ccm, seed_E=seed_E)
         last_lib = float(libs[-1])
         rho_med = float(stats.loc[last_lib, 0.5])
         rho.append(rho_med)
@@ -286,8 +287,7 @@ def surrogate(df, col_lib, col_target, num=200, libs=lib, comparaison=None):
     pvalue = (sum(r > comparaison for r in rho) + 1) / (len(rho) + 1)
     return surrogate_series, resume, pvalue
 
-def _ccm_rho_for_one_surrogate(args):
-    date_values, surrogate_values, target_values, surr_name, col_target, libs, Tp = args
+def _ccm_rho_for_one_surrogate(date_values, surrogate_values, target_values, surr_name, col_target, libs, Tp=0, seed_finale=2301, seed_E=42):
     d = pd.DataFrame({
         'date': date_values,
         surr_name: surrogate_values,
@@ -305,13 +305,13 @@ def _ccm_rho_for_one_surrogate(args):
         col_target: d[col_target].to_numpy()
     }).dropna().reset_index(drop=True)
 
-    stats, tau = final_ccm(temp, surr_name, col_target, libs=libs, Tp=Tp)
+    stats, tau = final_ccm(temp, surr_name, col_target, libs=libs, Tp=Tp, seed_finale=seed_finale, seed_E=seed_E)
 
     last_lib = float(libs[-1])
     rho_med = float(stats.loc[last_lib, 0.5])
     return rho_med
 
-def surrogate_fast(df, col_lib, col_target, num=200, libs=lib, comparaison=None, Tp=0, maxworker=2): ## fontion écrite en coopération avec copilot pour accélerer le processus 
+def surrogate_fast(df, col_lib, col_target, num, libs, comparaison=None, Tp=0, maxworker=2, seed_ccm=2301, seed_E=42, seed_surrogate=0, method='seasonal'): ## fontion écrite en coopération avec copilot pour accélerer le processus ## l'idée avec les seed d'avoir une pour faire tourner le choix de E_best puis une différent pour le ccm final mais toujours le même entre les surrogates pour avoir des résultats comparables entre eux
 
     """
     Version rapide et stable :
@@ -329,12 +329,12 @@ def surrogate_fast(df, col_lib, col_target, num=200, libs=lib, comparaison=None,
 
     # important : la 1ère colonne est le temps, 2e la série surrogatée
     sur = SurrogateData(
-        d[['date', col_lib]].copy(),
-        column=col_lib,
+        dataFrame = d[['date', col_lib]].copy(),
+        columns=col_lib,
         numSurrogates=num,
-        method='seasonal',
+        methode=method,
         alpha=0,
-        smooth=0.8
+        seed = seed_surrogate
     )
 
     tasks = []
@@ -347,13 +347,15 @@ def surrogate_fast(df, col_lib, col_target, num=200, libs=lib, comparaison=None,
             surr_name,
             col_target,
             libs,
-            Tp
+            Tp,
+            seed_ccm,
+            seed_E
         ))
 
     surrogate_rhos = []
 
     with ProcessPoolExecutor(maxworker) as executor:
-        futures = [executor.submit(_ccm_rho_for_one_surrogate, task) for task in tasks]
+        futures = [executor.submit(_ccm_rho_for_one_surrogate, *task) for task in tasks]
 
     for idx, fut in enumerate(as_completed(futures), start=1):
         surrogate_rhos.append(fut.result())
@@ -375,7 +377,7 @@ def surrogate_fast(df, col_lib, col_target, num=200, libs=lib, comparaison=None,
     if comparaison is None:
         return surrogate_series, resume
 
-    pvalue = (sum(r > comparaison for r in surrogate_rhos) + 1) / (len(surrogate_rhos) + 1)
+    pvalue = (sum(r > comparaison for r in surrogate_rhos)) / (len(surrogate_rhos)) #j'enleve le +1 car peu de surrogate et pour tester la consistance des résultats
     return surrogate_series, resume, pvalue
 
 def _normalize_pyedm_time(df):
@@ -390,18 +392,34 @@ def _normalize_pyedm_time(df):
     cols = ['date'] + [c for c in out.columns if c != 'date']
     return out[cols]
 
-def simplex_prediction(df, col_lib, col_target, lib_range=lib, pred_range=pred, Tp=0):
+def simplex_prediction(df, col_lib, col_target, lib, pred, Tp=1):
     df = _normalize_pyedm_time(df)
-    E_best = find_best_E(df=df, col_lib=col_lib, col_target=col_target, Tp=Tp)
-    preds = Simplex(
-        dataFrame=df,
-        lib=str(lib_range),
-        pred=str(pred_range),
-        E=E_best,
-        columns=col_lib,
-        target=col_target,
-        showPlot=False,
-    )
+    n = len(col_lib.split())
+    if n < 2:
+        E_best = find_best_E(df=df, col_lib=col_lib, col_target=col_target, Tp=Tp, lib=lib, pred=pred)
+        preds = Simplex(
+            dataFrame=df,
+            lib=str(lib),
+            pred=str(pred),
+            E=E_best,
+            columns=col_lib,
+            target=col_target,
+            showPlot=False,
+            Tp=Tp
+        )
+    else:
+        E_best = n
+        preds = Simplex(
+            dataFrame=df,
+            lib=str(lib),
+            pred=str(pred),
+            E=E_best,
+            columns=col_lib,
+            target=col_target,
+            showPlot=False,
+            Tp=Tp, 
+            embedded=True
+        )
     return preds, E_best
 
 def find_besttheta(df, col_lib, col_target, lib, pred, E, Tp=0):
@@ -442,9 +460,15 @@ def find_besttheta(df, col_lib, col_target, lib, pred, E, Tp=0):
         results.append((theta, rho))
     return max(results, key=lambda x: x[1])[0]
 
-def Smap_prediction(df, col_lib, col_target, lib, pred, Tp=0):
+def Smap_prediction(df, col_lib, col_target, lib, pred, Tp=1):
     df = _normalize_pyedm_time(df)
-    E = max(2, len(col_lib.split()))
-    theta_best = find_besttheta(df, col_lib, col_target, lib, pred, E, Tp=Tp)
-    preds = SMap(df, columns=col_lib, target=col_target, lib=lib, pred=pred, E=E, Tp=Tp, theta=theta_best, embedded=True)
+    n = len(col_lib.split())
+    if n < 2:
+        E = find_best_E(df=df, col_lib=col_lib, col_target=col_target, lib=lib, pred=pred, Tp=Tp)
+        theta_best = find_besttheta(df, col_lib, col_target, lib, pred, E, Tp=Tp)
+        preds = SMap(datFrame=df, columns=col_lib, target=col_target, lib=lib, pred=pred, E=E, Tp=Tp, theta=theta_best)
+    else:
+        E = n
+        theta_best = find_besttheta(df, col_lib, col_target, lib, pred, E, Tp=Tp)
+        preds = SMap(dataFrame=df, columns=col_lib, target=col_target, lib=lib, pred=pred, E=E, Tp=Tp, theta=theta_best, embedded=True)
     return preds, theta_best

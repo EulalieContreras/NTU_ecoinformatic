@@ -1,0 +1,44 @@
+Reunion 1 :
+
+1 long code 
+- try to run CCM on preprocess data ✓ 
+- test on just a few libraries ✓
+- try on larger time skills for groundwater and streamflow interaction ✓
+
+2 inconsistent results
+- add random seed after checking the consistency
+- print debug in SurrogateData 
+
+3 pvalue 
+- clear reference ✓
+- len(lag) instead of len(df) - 3 ✓
+
+4 interaction strenght : weak normal ? 
+
+In between work 1 
+
+choses a faire :
+- finir de réparer le notebook ✓
+- étudier/vérifier seed et randomisation : ✓
+        - faire tourner 1 final_ccm (plusieurs find_E_best): toujours le meme seed pour trouver best embedding sans part de hasard puis 1 seed différente pour le final_ccm
+        - faire tourner plusieurs final_ccm (surrogate) : toujours la meme seed pour chaque ccm (meme raison d'avoir une comparaison pertinente sans part de hasard)
+        - faire plusieurs génération de surrogate : possible de le rendre reproductible mais pas forcément nécessaire
+    conclusion : l'aléatoire vient seulement de la génération des surrogate entre chaque run 
+
+- comprender pourquoi j'ai des valeurs de corrélation si basse pour les surrogate (inférieur ) ✓
+- interaction strenght : différence quand tu normalizes ! ✓
+- interpretation
+- pourquoi 1970 dans la partie parameter exploration ? ✓
+- avancer tipping points !! 
+
+questions : 
+1 comprendre pourquoi j'ai des valeurs de corrélation si basse pour les surrogate (inférieur )
+2 resultat incohérent avec le preprocess 
+3 conseil pour les valeurs à prendre : sample dans ccm ? choix des seed ? (le meme pour choix de E puis un différent pour le final_ccm)
+4 interpretation
+5 interaction strenght : différence quand tu normalizes ! 
+6 lag precipitation 
+
+Reunion 2 :
+
+1

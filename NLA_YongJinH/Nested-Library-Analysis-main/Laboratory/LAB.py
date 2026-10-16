@@ -13,10 +13,12 @@ import matplotlib.pyplot    as plt
 import numpy as np
 import pandas as pd
 from matplotlib import cm
-import dx
+dx = nla.dx
 import matplotlib as mpl; mpl.use('tkagg') ## for Mac
 from matplotlib.dates import YearLocator, MonthLocator, DateFormatter
 # R functions
+import os
+os.environ["R_LIBS_USER"] = os.path.expanduser("~/R/library")
 from rpy2.robjects.packages import importr
 detectBatch = importr('cpm').detectChangePointBatch
 rdollar     = importr('base').__dict__['$']
@@ -55,11 +57,11 @@ def Run_and_Return( SEED, T_c, s_PE, s_ME, SKIPSTEP, JustSystem = False, normali
         return AH3SP
     else:
         # Set the NestLibraryAnalysis Object
-        nlaObj = nla(AH3SP[:,3:])
+        nlaObj = nla.nla(AH3SP[:,3:])
         # Run NLA
         nlares = nlaObj.run(FlowRef = "751 1000", LargestLib = "1 750", SmallestLib = "501 750",
                             skipstep = SKIPSTEP, numThreads = 6, method = method)
-        rawS, tilS, trdS = nla.SignalProcessing(nlares, SIGMA = 1)
+        rawS, tilS, trdS = nla.nla.SignalProcessing(nlares, SIGMA = 1)
         rawS        = rawS.unstack()
         rawS.name   = str(SEED)
         return rawS
@@ -103,7 +105,7 @@ def Visualize( SEED,
                SIGMA          = 2.5,
                method         = "SMap"):
     rawS = CUR( SEED, T_c, s_ProcessError, s_MeasureError, SKIPSTEP ).unstack().T
-    rawS, tilS, trdS = nla.Signal_from_rawS(rawS, SIGMA)
+    rawS, tilS, trdS = nla.nla.Signal_from_rawS(rawS, SIGMA)
     AH3SP = Run_and_Return( SEED, T_c, s_ProcessError, s_MeasureError, SKIPSTEP, JustSystem = True, method = method)
     # 
     if 1:
@@ -186,7 +188,7 @@ def summary( T_c, s_PE, s_ME, SKIPSTEP, SIGMA ):
         return None
     resTable = {}
     for SEED in DF.columns:
-        signS          = nla.Signal_from_rawS( DF[SEED].unstack().T, SIGMA )[-1].apply(np.sign)
+        signS          = nla.nla.Signal_from_rawS( DF[SEED].unstack().T, SIGMA )[-1].apply(np.sign)
         resTable[SEED] = signS.apply(detectCP).median() # mean or median?
     return resTable
 
@@ -234,10 +236,10 @@ if __name__ == "__main__":
         _ = ax2.set_ylabel('a', color = 'red', rotation=0)
         _ = axes[i].set_xlabel("time")
     fig.tight_layout()
-    plt.show()
+
     # for thesis # -- Figure 2
     fig = Visualize(4040, trueTc, 0.05, s_ME, 10, 3)
-    plt.show()
+
     # for thesis # -- Figure 3
     DFYs    = pd.DataFrame(np.array([ Run_and_Return(seed, trueTc, 0.05, s_ME, 10, True)[:500, 2] for seed in np.arange(4000, 4200) ]).T,
                            columns = np.arange(4000, 4200))
@@ -290,7 +292,7 @@ if __name__ == "__main__":
                           SmallestLib = "{:d} {:d}".format(ReferTo, ShrkUntl),
                           skipstep = 12,
                           numThreads = 4)
-    rawS, tilS, trdS = nla.SignalProcessing(nlares, SIGMA = 2, FromRight = True)
+    rawS, tilS, trdS = nla.nla.SignalProcessing(nlares, SIGMA = 2, FromRight = True)
     Index = np.arange( -(ShrkUntl//12) +(ShrkFrom//12) )
     # ####
     fig, [ax0, ax1] = plt.subplots(2, 1, sharex = False, figsize = (10, 5), tight_layout = True)
@@ -329,7 +331,7 @@ if __name__ == "__main__":
     _ = tax1.scatter([], [], color = cm.bone(1/6), marker = 's', alpha = 0.4, label = r"$\frac{d}{dt}\widetilde{\,\mathtt{RMSE}}_n(t) < 0$")
     _ = tax1.scatter([], [], color = cm.bone(5/6), marker = 's', alpha = 0.6, label = r"$\frac{d}{dt}\widetilde{\,\mathtt{RMSE}}_n(t) > 0$")
     tax1.legend(loc = 'upper left')
-    plt.show()
+
     # for thesis # -- Figure 3-2
     # s_ME    = 0.05
     ComprDF = {}

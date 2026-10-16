@@ -586,7 +586,7 @@ if __name__ == '__main__': ## nécessaire pour le multiprocess de ccm mais doit 
     plt.ylabel("Prediction")
     plt.title(f"Multiview simplex projection (E={bestE} and rho={rho})")
     plt.grid(True)
-    '''
+    
 
     ### INTERACTION STRENGTH 
 
@@ -626,7 +626,8 @@ if __name__ == '__main__': ## nécessaire pour le multiprocess de ccm mais doit 
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
-    
+    '''
+
     ### PARAMETER EXPLORATION
     df = fdv1.merge(meteo, on='date', how='outer', suffixes=('_riviere', '_meteo'))
     df = df.merge(ground_water, on='date', how='outer', suffixes=('', '_groundwater'))
@@ -689,7 +690,7 @@ if __name__ == '__main__': ## nécessaire pour le multiprocess de ccm mais doit 
 
     ### TIPPING POINTS 
 
-
+    
 
     plt.show()
 
