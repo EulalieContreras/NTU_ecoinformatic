@@ -40,7 +40,7 @@ questions :
 6 lag precipitation 
 
 choses à faire :
-- faire tourner avec plus de point ✓
+- faire tourner avec plus de point ✓ (reste que ebosuzaki 200°)
 - travailler l'interpretation
 - avancer tipping points
 - investiguer plus l'analyse de données mensuelles et hebdomadaires ✓
