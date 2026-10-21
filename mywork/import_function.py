@@ -17,8 +17,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 
 
 ### Parameters
-E_values = range(2, 9)
-window_ = 60
+E_values = range(2, 11)
 theta_values = np.arange(0, 3.1, 0.1)
 
 ### Functions of preprocessing
@@ -30,69 +29,77 @@ def normalize_series(series):
     return pd.Series(array, index=series.index) # Return a pandas Series with the same index as the input series
 
 def deseason_mult(serie, period_):
-    series = serie.reset_index(drop=True)
-    lenght = 365//period_
+    series = serie.copy()  # ✅ Garde l'index original (dates)
+    lenght = 365 // period_
     n = len(series)
 
-    idx = np.arange(n)
-    period_idx = idx // lenght
-    position_idx = idx % lenght
+    idx = np.arange(n)  # [0, 1, 2, ..., n-1]
+    period_idx = idx // lenght  # Numéro de la saison pour chaque point
+    position_idx = idx % lenght  # Position dans la saison (0 à lenght-1)
     n_season = period_idx.max() + 1
 
-    period_mean = np.array([series[period_idx == _].mean(skipna=True) for _ in range(n_season)])
+    # 1. Moyenne par saison
+    period_mean = np.array([series.iloc[period_idx == _].mean() for _ in range(n_season)])
 
-    season_index = []
-    for i in series.index:
-        season_index.append(series[i]/period_mean[period_idx[i]])
-    season_index = np.array(season_index)
+    # 2. season_index = serie / moyenne_de_la_saison
+    season_index = np.array([
+        series.iloc[i] / period_mean[period_idx[i]]  # ✅ i est un entier
+        for i in range(n)
+    ])
 
-    mean_season_index = []
-    for p in range(lenght):
-        mean_season_index.append(np.nanmean(season_index[position_idx == p])) 
-    mean_season_index = np.array(mean_season_index)
+    # 3. Moyenne par position dans la saison
+    mean_season_index = np.array([
+        np.nanmean(season_index[position_idx == p])
+        for p in range(lenght)
+    ])
 
-    deseasoned = []
-    for j in series.index:
-       deseasoned.append(series[j]/mean_season_index[position_idx[j]])
-    deseasoned = pd.Series(deseasoned, index=series.index)
+    # 4. Désaisonnalisation : serie / moyenne_de_la_position
+    deseasoned = np.array([
+        series.iloc[j] / mean_season_index[position_idx[j]]  # ✅ j est un entier
+        for j in range(n)
+    ])
 
-    return deseasoned
+    return pd.Series(deseasoned, index=series.index)  # ✅ Index original (dates)
 
-def detrend_add(series):
+def detrend_add(series, window_=90):
     rolling_mean = series.rolling(window=window_, center=True).mean()
     detrended = series - rolling_mean
     return detrended 
 
 def deseason_add(serie, period_):
-    series = serie.reset_index(drop=True)
-    lenght = 365//period_
+    series = serie.copy()  # ✅ Garde l'index original (dates)
+    lenght = 365 // period_
     n = len(series)
 
-    idx = np.arange(n)
-    period_idx = idx // lenght
-    position_idx = idx % lenght
+    idx = np.arange(n)  # [0, 1, 2, ..., n-1] (indices numériques)
+    period_idx = idx // lenght  # Numéro de la saison pour chaque point
+    position_idx = idx % lenght  # Position dans la saison (0 à lenght-1)
     n_season = period_idx.max() + 1
 
-    period_mean = np.array([series[period_idx == _].mean(skipna=True) for _ in range(n_season)])
+    # 1. Moyenne par saison
+    period_mean = np.array([series.iloc[period_idx == _].mean() for _ in range(n_season)])
 
-    season_index = []
-    for i in series.index:
-        season_index.append(series[i] - period_mean[period_idx[i]])
-    season_index = np.array(season_index)
+    # 2. season_index = serie - moyenne_de_la_saison
+    season_index = np.array([
+        series.iloc[i] - period_mean[period_idx[i]]  # ✅ i est un entier
+        for i in range(n)
+    ])
 
-    mean_season_index = []
-    for p in range(lenght):
-        mean_season_index.append(np.nanmean(season_index[position_idx == p]))
-    mean_season_index = np.array(mean_season_index)
+    # 3. Moyenne par position dans la saison
+    mean_season_index = np.array([
+        np.nanmean(season_index[position_idx == p])
+        for p in range(lenght)
+    ])
 
-    deseasoned = []
-    for j in series.index:
-       deseasoned.append(series[j] - mean_season_index[position_idx[j]])
-    deseasoned = pd.Series(deseasoned, index=series.index)
+    # 4. Désaisonnalisation : serie - moyenne_de_la_position
+    deseasoned = np.array([
+        series.iloc[j] - mean_season_index[position_idx[j]]  # ✅ j est un entier
+        for j in range(n)
+    ])
 
-    return deseasoned
+    return pd.Series(deseasoned, index=series.index)  # ✅ Index original (dates)
 
-def detrend_mult(series):
+def detrend_mult(series, window_=90):
     rolling_mean = series.rolling(window=window_, center=True).mean()
     detrended = series / rolling_mean
     return detrended 
@@ -253,6 +260,7 @@ def summarize_trend(df_rho, col_name):
         tau[q] = kendalltau(stats.index.astype(float), stats[q]).correlation
     return stats, tau
 
+#try sample size
 def final_ccm(df, col_lib, col_target, libs, Tp=0, samples=10, seed_E = 42, seed_finale = 2301):
     # pyEDM requires the first column to be a time/index column, so we keep date first.
     df_clean = df.copy().reset_index(drop=True)
@@ -461,6 +469,7 @@ def find_besttheta(df, col_lib, col_target, lib, pred, E, Tp=0):
     return max(results, key=lambda x: x[1])[0]
 
 def Smap_prediction(df, col_lib, col_target, lib, pred, Tp=1):
+
     df = _normalize_pyedm_time(df)
     n = len(col_lib.split())
     if n < 2:
@@ -472,3 +481,5 @@ def Smap_prediction(df, col_lib, col_target, lib, pred, Tp=1):
         theta_best = find_besttheta(df, col_lib, col_target, lib, pred, E, Tp=Tp)
         preds = SMap(dataFrame=df, columns=col_lib, target=col_target, lib=lib, pred=pred, E=E, Tp=Tp, theta=theta_best, embedded=True)
     return preds, theta_best
+
+
