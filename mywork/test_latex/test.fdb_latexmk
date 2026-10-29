@@ -1,0 +1,18 @@
+# Fdb version 4
+["pdflatex"] 1793155970.40274 "/home/eulalie/Documents/eulalie/etude/cesure/taiwan/travail/NTU_ecoinformatic/mywork/test.tex" "test.pdf" "test" 1793155970.51547 0
+  "/home/eulalie/.TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb" 1248133631 35752 024fb6c41858982481f6968b5fc26508 ""
+  "/home/eulalie/.TinyTeX/texmf-dist/tex/latex/base/report.cls" 1780258940 23203 2e95a8738396391734575d14e540b3c0 ""
+  "/home/eulalie/.TinyTeX/texmf-dist/tex/latex/base/size10.clo" 1780258940 8448 f7d8bfe7b7a3986fbf9022b21b7800cc ""
+  "/home/eulalie/.TinyTeX/texmf-dist/tex/latex/l3kernel/l3backend-pdftex.def" 1790017662 31824 60c8410f6fc024f189369cb45fa634af ""
+  "/home/eulalie/.TinyTeX/texmf-dist/web2c/texmf.cnf" 1782667392 43815 bcd8835056a2dfac260166a1c9541261 ""
+  "/home/eulalie/.TinyTeX/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1792553160 92919 301c388eedcd10ac9a90bfa0e39394eb ""
+  "/home/eulalie/.TinyTeX/texmf-var/web2c/pdftex/pdflatex.fmt" 1792553172 2264002 8db99885d4eaa697e644f170b10af97f ""
+  "/home/eulalie/.TinyTeX/texmf.cnf" 1792553149 637 edd806fb06a89761a6034e1968af9017 ""
+  "/home/eulalie/Documents/eulalie/etude/cesure/taiwan/travail/NTU_ecoinformatic/mywork/test.tex" 1793155969.97927 64 32e36f910b6ca6dfb44a3904e84c4a76 ""
+  "test.aux" 1793155970.50527 32 3985256e7290058c681f74d7a3565a19 "pdflatex"
+  "test.tex" 1793155969.97927 64 32e36f910b6ca6dfb44a3904e84c4a76 ""
+  (generated)
+  "test.aux"
+  "test.log"
+  "test.pdf"
+  (rewritten before read)

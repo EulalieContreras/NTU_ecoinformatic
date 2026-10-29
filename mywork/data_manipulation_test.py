@@ -1,12 +1,28 @@
-import import_function as fun
+import import_function as fun 
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 from scipy import stats
 from pyEDM import *
+import CyNLA
+dx = CyNLA.dx
+from seaborn import heatmap, kdeplot, histplot, color_palette
+
+# R functions
+import os
+os.environ["R_LIBS_USER"] = os.path.expanduser("~/R/library")
+from rpy2.robjects.packages import importr
+detectBatch = importr('cpm').detectChangePointBatch
+rdollar     = importr('base').__dict__['$']
+import warnings
+from rpy2.rinterface import RRuntimeWarning
+warnings.filterwarnings("ignore", category=RRuntimeWarning)
+import os, string
+import CyNLA
 
 if __name__ == '__main__': ## nécessaire pour le multiprocess de ccm mais doit être enlevé  dans le notebook
-
+    '''
     ### PREPROCESS 
 
     #river
@@ -15,8 +31,8 @@ if __name__ == '__main__': ## nécessaire pour le multiprocess de ccm mais doit 
     fdv1 = fdv1[(fdv1['city']=='FONTAINE DE VAUCLUSE 1') & (fdv1['date'] > '2004-01-01')]
     mean_flow_fdv1 = fdv1['mean_flow']
     river_flow = fun.normalize_series(mean_flow_fdv1)
+
     
-    '''
     deseason_mean_flow_fdv1 = fun.deseason_add(mean_flow_fdv1, 1)
     detrend_mean_flow_fdv1 = fun.detrend_add(deseason_mean_flow_fdv1)
     normalize_mean_flow_fdv1_a = fun.normalize_series(detrend_mean_flow_fdv1)
@@ -626,7 +642,7 @@ if __name__ == '__main__': ## nécessaire pour le multiprocess de ccm mais doit 
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
-    '''
+    
 
     ### PARAMETER EXPLORATION
     df = fdv1.merge(meteo, on='date', how='outer', suffixes=('_riviere', '_meteo'))
@@ -686,11 +702,71 @@ if __name__ == '__main__': ## nécessaire pour le multiprocess de ccm mais doit 
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
+    '''
     
-
     ### TIPPING POINTS 
+    fdv1 = pd.read_csv('mywork/donnees/rivers_02-13.csv', sep=';', parse_dates=['date'])
+    fdv1 = fdv1[(fdv1['city']=='FONTAINE DE VAUCLUSE 1') & (fdv1['date'] > '2004-01-01')]
+    river_flow = fun.normalize_series(fdv1['mean_flow'])
+    detrended_river = fun.detrend_add(river_flow)
+    fdv1['mean_flow'] = detrended_river
+
+
+    meteo = pd.read_csv('mywork/donnees/meteo_02-13.csv', sep = ';', parse_dates=['date'])
+    meteo = meteo[(meteo['city'] == 'ISLE SUR SORGUE') & (meteo['date'] > '2004-01-01')]
+    rain = fun.normalize_series(meteo['precipitation'])
+    detrended_rain = fun.detrend_add(rain)
+    meteo['precipitation'] = detrended_rain
+
+    ground_water = pd.read_csv('mywork/donnees/groundwater_02-13.csv', sep=';', parse_dates = ['date'])
+    ground_water = ground_water[(ground_water['city']=='THOR') & (ground_water['date'] > '2004-01-01')]
+    depth = fun.normalize_series(ground_water['NGF_depth'])
+    detrended_depth = fun.detrend_add(depth)
+    ground_water['NGF_depth'] = detrended_depth
+
+    df = pd.merge(fdv1[['date', 'mean_flow']], meteo[['date', 'precipitation']], on='date', how='inner').sort_values('date').reset_index(drop=True)
+    df = pd.merge(df, ground_water[['date', 'NGF_depth']], on='date', how='inner').sort_values('date').reset_index(drop=True)
+    df['lag_precipitation'] = df['precipitation'].shift(3)
+    df = df[['date', 'mean_flow', 'NGF_depth', 'precipitation', 'lag_precipitation']].dropna().reset_index(drop=True)
+    df['date'] = pd.to_datetime(df['date'], errors='coerce')
+    df = df.dropna(subset=['date']).sort_values('date').reset_index(drop=True)
+
+    n = len(df)
+    quart = len(df)//4
+    ref_start = n - quart + 1
+    ref_end = n
+    large_start = 1
+    small_start = quart + quart + 1
+    end = n-quart
+    skip_step = 100
 
     
+    '''    
+    nlaObj = fun.nlaObject(df, 'mean_flow')
+    nlares = nlaObj.run(FlowRef = f"{ref_start} {ref_end}", LargestLib = f"{large_start} {end}", SmallestLib = f"{small_start} {end}",
+                        skipstep = skip_step, numThreads = 1, method = "SMap")
+    rawS, tilS, trdS = CyNLA.nla.SignalProcessing(nlares, SIGMA = 1)
+    rawS        = rawS.unstack()
+    rawS = pd.DataFrame(rawS)
+    rawS.to_csv("nlatest.csv")
+    '''
 
+    tp, rawS, tilS, trdS = fun.detectTP(df, 'mean_flow', pred = f"{ref_start} {ref_end}", lib_large = f"{large_start} {end}", lib_small = f"{small_start} {end}")
+    plt.figure()
+    plt.plot(df['date'], df['mean_flow'])
+    plt.scatter(tp, df.loc[df['date']==tp, 'mean_flow'])
     plt.show()
+    plt.savefig('figure_mean_flow.png')  # ✅ Sauvegarde dans un fichier
+    plt.close()  # Libère la mémoire
+    
+    plt.figure()
+    for i in rawS['Trial']:
+        plt.plot(rawS[rawS['Trial']==i]['Boundary'], rawS[rawS['Trial']==i][0].values,
+                    color='g', marker='o', lw=0, markersize=3, mfc='none', alpha=1)
+        plt.plot(tilS[tilS['Trial']==i]['Boundary'], tilS[tilS['Trial']==i][0].values,
+                    color='g', alpha=1)
+    plt.savefig('figure_nla.png')  # ✅ Sauvegarde
+    plt.show()
+    plt.close()
+
 

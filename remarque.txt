@@ -49,6 +49,14 @@ Reunion 2 :
 
 - standardized BEFORE detrend ✓
 - negative correlations : grrr toujours un problème !
-- sample : convergent value 
-- Tp still is suspens 
+- sample : convergent value ✓
 - keep every time step to compare ✓
+
+
+- Tp still in suspens 
+
+A faire : 
+- negative correlations
+- interpretation (demander à leo)
+- mail question/discusion
+- notebook + article ? ✓

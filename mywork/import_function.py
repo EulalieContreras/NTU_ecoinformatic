@@ -10,10 +10,14 @@ from statsmodels.tsa.stattools import adfuller
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_absolute_error
 from pyEDM import *
+import CyNLA
 from scipy.stats import kendalltau
 import os
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from rpy2.robjects.packages import importr
+detectBatch = importr('cpm').detectChangePointBatch
+rdollar     = importr('base').__dict__['$']
 
 
 ### Parameters
@@ -177,7 +181,7 @@ def run_smap(ts, E, lib, pred, theta_values=theta_values, Tp=1):
         results.append({'theta': theta, 'rho': rho})
     return pd.DataFrame(results)
 
-def find_best_E_ccm(df, col_lib, col_target, seed=42): # Tp = -1 to avoid overfitting ? (make more research on that)
+def find_best_E_ccm(df, col_lib, col_target, seed=42, samples=10): # Tp = -1 to avoid overfitting ? (make more research on that)
     df = df.copy().reset_index(drop=True)
     if 'date' not in df.columns:
         df.insert(0, 'date', np.arange(len(df)))
@@ -194,7 +198,7 @@ def find_best_E_ccm(df, col_lib, col_target, seed=42): # Tp = -1 to avoid overfi
             E=E,
             Tp=-1,
             libSizes=str(lib_size),  # libSize min max step
-            sample=5, #comment choisir cette valeur ? 
+            sample=samples, #comment choisir cette valeur ? 
             showPlot=False, 
             seed = seed
         )
@@ -266,7 +270,7 @@ def final_ccm(df, col_lib, col_target, libs, Tp=0, samples=10, seed_E = 42, seed
     if 'date' not in df_clean.columns:
         df_clean.insert(0, 'date', np.arange(len(df_clean)))
     df_clean = df_clean[['date', col_lib, col_target]].dropna(subset=[col_lib, col_target]).reset_index(drop=True)
-    E_best = find_best_E_ccm(df_clean, col_lib, col_target, seed=seed_E)
+    E_best = find_best_E_ccm(df_clean, col_lib, col_target, seed=seed_E, samples=samples)
     df_rho = run_ccm_bootstrap(df_clean, col_lib, col_target, E_best, libs, samples=samples, Tp=Tp, seed=seed_finale)
     stats, tau = summarize_trend(df_rho, "rho")
     return stats, tau
@@ -294,7 +298,7 @@ def surrogate(df, col_lib, col_target, num, libs, comparaison=None, Tp=0, seed_c
     pvalue = (sum(r > comparaison for r in rho) + 1) / (len(rho) + 1)
     return surrogate_series, resume, pvalue
 
-def _ccm_rho_for_one_surrogate(date_values, surrogate_values, target_values, surr_name, col_target, libs, Tp=0, seed_finale=2301, seed_E=42):
+def _ccm_rho_for_one_surrogate(date_values, surrogate_values, target_values, surr_name, col_target, libs, Tp=0, seed_finale=2301, seed_E=42, samples=10):
     d = pd.DataFrame({
         'date': date_values,
         surr_name: surrogate_values,
@@ -312,13 +316,13 @@ def _ccm_rho_for_one_surrogate(date_values, surrogate_values, target_values, sur
         col_target: d[col_target].to_numpy()
     }).dropna().reset_index(drop=True)
 
-    stats, tau = final_ccm(temp, surr_name, col_target, libs=libs, Tp=Tp, seed_finale=seed_finale, seed_E=seed_E)
+    stats, tau = final_ccm(temp, surr_name, col_target, libs=libs, Tp=Tp, seed_finale=seed_finale, seed_E=seed_E, samples=samples)
 
     last_lib = float(libs[-1])
     rho_med = float(stats.loc[last_lib, 0.5])
     return rho_med
 
-def surrogate_fast(df, col_lib, col_target, num, libs, comparaison=None, Tp=0, maxworker=2, seed_ccm=2301, seed_E=42, seed_surrogate=0, method='seasonal'): ## fontion écrite en coopération avec copilot pour accélerer le processus ## l'idée avec les seed d'avoir une pour faire tourner le choix de E_best puis une différent pour le ccm final mais toujours le même entre les surrogates pour avoir des résultats comparables entre eux
+def surrogate_fast(df, col_lib, col_target, num, libs, comparaison=None, Tp=0, maxworker=2, seed_ccm=2301, seed_E=42, seed_surrogate=0, method='seasonal', samples=10): ## fontion écrite en coopération avec copilot pour accélerer le processus ## l'idée avec les seed d'avoir une pour faire tourner le choix de E_best puis une différent pour le ccm final mais toujours le même entre les surrogates pour avoir des résultats comparables entre eux
 
     """
     Version rapide et stable :
@@ -356,7 +360,8 @@ def surrogate_fast(df, col_lib, col_target, num, libs, comparaison=None, Tp=0, m
             libs,
             Tp,
             seed_ccm,
-            seed_E
+            seed_E, 
+            samples
         ))
 
     surrogate_rhos = []
@@ -481,4 +486,55 @@ def Smap_prediction(df, col_lib, col_target, lib, pred, Tp=1):
         preds = SMap(dataFrame=df, columns=col_lib, target=col_target, lib=lib, pred=pred, E=E, Tp=Tp, theta=theta_best, embedded=True)
     return preds, theta_best
 
+### funciton for NLA 
+def nlaObject(df, column):
+    df_nla = pd.DataFrame({'time': pd.to_datetime(df['date']), column: df[column].values})
+    df_nla = df_nla.dropna()
+    df_nla['time'] = (df_nla['time'] - pd.Timestamp('1970-01-01')).dt.total_seconds()
+    nlaObj = CyNLA.nla(df_nla.to_numpy())
+    return nlaObj, df_nla
 
+def detectCP_allmethod(series, _cpmType = 'Student', valley_check = True):
+    series = series.dropna()
+    base   = series.values.tolist()
+    if len(base) < 10: # too short for R package 'cpm'
+        return np.nan
+    try:
+        cpmres = detectBatch( base, cpmType = _cpmType, alpha = 0.001)
+    except:
+        return np.nan
+    if rdollar(cpmres, 'changeDetected')[0]:
+        changepoint = rdollar(cpmres, 'changePoint')[0]+1
+        if valley_check:    # || for NLA we would like to pulse the alarm when there is a valley shape in RMSE curve
+            if series[:changepoint].mean() >= series[changepoint:].mean():
+                return np.nan
+            else:
+                return series.index[changepoint-1][1]
+        else:               # || otherwise, for CPMs, we simply report the output
+            return series.index[changepoint-1][1] # minus 1 because R counts from 1 rather than 0
+    else:
+        return np.nan
+
+def detectTP(df, column, lib_small, lib_large, pred, SIGMA=2.5, SKIPSTEP=10, method="SMap"):
+    nlaObj, df_nla = nlaObject(df, column)
+    nlares = nlaObj.run(FlowRef = pred, LargestLib = lib_large, SmallestLib = lib_small,
+                            skipstep = SKIPSTEP, numThreads = 6, method = method)
+    rawS, tilS, trdS = CyNLA.nla.SignalProcessing(nlares, SIGMA = SIGMA)
+    trdS  = trdS.unstack()
+    trdS = pd.DataFrame(trdS)
+    signS = trdS.apply(np.sign)
+    res = signS.apply(detectCP_allmethod).median() # mean or median?
+    if pd.isna(res):
+        tp = pd.Timestamp('1970-01-01')
+        print('⚠️ Aucun tipping point détecté')
+    else:
+        boundary_index = int(round(res))
+        if 0 <= boundary_index < len(df_nla):
+            timestamp_seconds = df_nla.iloc[boundary_index]['time']
+            tp = pd.to_datetime(timestamp_seconds, unit='s', origin='1970-01-01')
+        else:
+            tp = pd.Timestamp('1970-01-01')
+            print(f'⚠️ Boundary index {boundary_index} hors limites (max: {len(df_nla)-1})')
+
+    print('Tipping point :', tp)
+    return tp, rawS, tilS, trdS
