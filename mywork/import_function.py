@@ -260,7 +260,6 @@ def summarize_trend(df_rho, col_name):
         tau[q] = kendalltau(stats.index.astype(float), stats[q]).correlation
     return stats, tau
 
-#try sample size
 def final_ccm(df, col_lib, col_target, libs, Tp=0, samples=10, seed_E = 42, seed_finale = 2301):
     # pyEDM requires the first column to be a time/index column, so we keep date first.
     df_clean = df.copy().reset_index(drop=True)
