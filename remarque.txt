@@ -53,10 +53,20 @@ Reunion 2 :
 - keep every time step to compare ✓
 
 
-- Tp still in suspens 
+- Tp et lag_precipitaion still in suspens 
 
 A faire : 
 - negative correlations
 - interpretation (demander à leo)
+- detection tipping point mal faite 
+- question d'interpolation ✓
+- mauvais sens pour les surrogate !!!!!!!!!!! ✓
+- check fonction surrogate par claude et comment seasonal fonctionne ✓
+
+-probleme des nan:
+    - prendre en compte dans ccm, simplex et smap : modifier PrepareEmbedding et FormatOutpu avec FillTimes 
+    - prendre en compte dans surrogate
+    - prendre en compte dans multiview
+
 - mail question/discusion
 - notebook + article ? ✓

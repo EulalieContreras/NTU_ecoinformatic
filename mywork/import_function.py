@@ -32,6 +32,19 @@ def normalize_series(series):
     array = scaler.fit_transform(array.reshape(-1, 1)).flatten() # returns a 1D array after normalization
     return pd.Series(array, index=series.index) # Return a pandas Series with the same index as the input series
 
+def interpolate(df, col): #simple interpolation linéaire pour les trous de moins de 3 jours 
+    """Remplace  normalize_series -> detrend_add -> df[col] = ...  :
+    calendrier journalier complet -> interpolation des trous courts
+    -> normalisation -> detrend  Renvoie un DataFrame ('date', col)."""
+    s = df.drop_duplicates('date').set_index('date')[col].sort_index()
+    full = pd.date_range(s.index.min(), s.index.max(), freq='D')
+    raw = s.reindex(full)                                  # NaN = jour absent ou vide
+    na = raw.isna()
+    gap_len = na.groupby(na.ne(na.shift()).cumsum()).transform('sum')
+    filled = raw.interpolate(limit_area='inside')
+    filled[na & (gap_len > 3)] = np.nan
+    return filled
+
 def deseason_mult(serie, period_):
     series = serie.copy()  # ✅ Garde l'index original (dates)
     lenght = 365 // period_
@@ -66,7 +79,7 @@ def deseason_mult(serie, period_):
     return pd.Series(deseasoned, index=series.index)  # ✅ Index original (dates)
 
 def detrend_add(series, window_=90):
-    rolling_mean = series.rolling(window=window_, center=True).mean()
+    rolling_mean = series.rolling(window=window_, center=True, min_periods=window_//2).mean()
     detrended = series - rolling_mean
     return detrended 
 
@@ -140,14 +153,13 @@ def evaluate_dimension(ts, lib, pred, Tp=1):
         data.append({'E': E, 'rho': rho})
     return pd.DataFrame(data)
 
-def run_smap(ts, E, lib, pred, theta_values=theta_values, Tp=1):
-    ts = pd.Series(ts).dropna().reset_index(drop=True)
+def run_smap(ts, E, lib, pred, theta_values=theta_values, Tp=1): #to avoid too long computing or error due to the fact that there is too little values or too close values in the matrix
+    
     df = pd.DataFrame({'Time': np.arange(1, len(ts) + 1), 'X': ts})    
     results = []
     for theta in theta_values:
         res = SMap(
             dataFrame=df,
-
             lib=lib,
             pred=pred,
             E=E,
@@ -167,7 +179,7 @@ def run_smap(ts, E, lib, pred, theta_values=theta_values, Tp=1):
             except Exception:
                 preds = None
 
-        if preds is None:
+        if pd.isna(preds).all(axis=None):
             rho = np.nan
         else:
             if 'Observations' not in preds.columns or 'Predictions' not in preds.columns:
@@ -185,7 +197,7 @@ def find_best_E_ccm(df, col_lib, col_target, seed=42, samples=10): # Tp = -1 to 
     df = df.copy().reset_index(drop=True)
     if 'date' not in df.columns:
         df.insert(0, 'date', np.arange(len(df)))
-    df = df[['date', col_lib, col_target]].dropna(subset=[col_lib, col_target]).reset_index(drop=True)
+    df = df[['date', col_lib, col_target]]
 
     results = []
     col_name = f"{col_lib}:{col_target}"
@@ -215,7 +227,7 @@ def find_best_E_ccm(df, col_lib, col_target, seed=42, samples=10): # Tp = -1 to 
 
     return max(results, key=lambda x: x[1])[0]
 
-def find_best_E(df, col_lib, col_target, lib, pred, Tp=1):
+def find_best_E_simplex(df, col_lib, col_target, lib, pred, Tp=1): # the difference with find_best_E_ccm is just that there is not several sample, to be used only with full data then 
     df = _normalize_pyedm_time(df)
     results = []
 
@@ -247,7 +259,7 @@ def run_ccm_bootstrap(df, col_lib, col_trg, E, libs, samples=10, seed=2301, Tp=0
     df = df.copy().reset_index(drop=True)
     if 'date' not in df.columns:
         df.insert(0, 'date', np.arange(len(df)))
-    df = df[['date', col_lib, col_trg]].dropna(subset=[col_lib, col_trg]).reset_index(drop=True)
+    df = df[['date', col_lib, col_trg]]
 
     out = CCM(
         dataFrame=df, columns=col_lib, target=col_trg,
@@ -264,13 +276,16 @@ def summarize_trend(df_rho, col_name):
         tau[q] = kendalltau(stats.index.astype(float), stats[q]).correlation
     return stats, tau
 
-def final_ccm(df, col_lib, col_target, libs, Tp=0, samples=10, seed_E = 42, seed_finale = 2301):
+def final_ccm(df, col_lib, col_target, libs, Tp=0, samples=10, seed_E = 42, seed_finale = 2301, E=None):
     # pyEDM requires the first column to be a time/index column, so we keep date first.
     df_clean = df.copy().reset_index(drop=True)
     if 'date' not in df_clean.columns:
         df_clean.insert(0, 'date', np.arange(len(df_clean)))
-    df_clean = df_clean[['date', col_lib, col_target]].dropna(subset=[col_lib, col_target]).reset_index(drop=True)
-    E_best = find_best_E_ccm(df_clean, col_lib, col_target, seed=seed_E, samples=samples)
+    df_clean = df_clean[['date', col_lib, col_target]]
+    if pd.isna(E):
+        E_best = find_best_E_ccm(df_clean, col_lib, col_target, seed=seed_E, samples=samples)
+    else:
+        E_best=E
     df_rho = run_ccm_bootstrap(df_clean, col_lib, col_target, E_best, libs, samples=samples, Tp=Tp, seed=seed_finale)
     stats, tau = summarize_trend(df_rho, "rho")
     return stats, tau
@@ -298,7 +313,7 @@ def surrogate(df, col_lib, col_target, num, libs, comparaison=None, Tp=0, seed_c
     pvalue = (sum(r > comparaison for r in rho) + 1) / (len(rho) + 1)
     return surrogate_series, resume, pvalue
 
-def _ccm_rho_for_one_surrogate(date_values, surrogate_values, target_values, surr_name, col_target, libs, Tp=0, seed_finale=2301, seed_E=42, samples=10):
+def _ccm_rho_for_one_surrogatereverse(date_values, surrogate_values, target_values, surr_name, col_target, libs, Tp=0, seed_finale=2301, seed_E=42, samples=10):
     d = pd.DataFrame({
         'date': date_values,
         surr_name: surrogate_values,
@@ -322,7 +337,7 @@ def _ccm_rho_for_one_surrogate(date_values, surrogate_values, target_values, sur
     rho_med = float(stats.loc[last_lib, 0.5])
     return rho_med
 
-def surrogate_fast(df, col_lib, col_target, num, libs, comparaison=None, Tp=0, maxworker=2, seed_ccm=2301, seed_E=42, seed_surrogate=0, method='seasonal', samples=10): ## fontion écrite en coopération avec copilot pour accélerer le processus ## l'idée avec les seed d'avoir une pour faire tourner le choix de E_best puis une différent pour le ccm final mais toujours le même entre les surrogates pour avoir des résultats comparables entre eux
+def surrogate_fastreverse(df, col_lib, col_target, num, libs, comparaison=None, Tp=0, maxworker=2, seed_ccm=2301, seed_E = 42, seed_surrogate=0, method='seasonal', samples=10): ## fontion écrite en coopération avec copilot pour accélerer le processus ## l'idée avec les seed d'avoir une pour faire tourner le choix de E_best puis une différent pour le ccm final mais toujours le même entre les surrogates pour avoir des résultats comparables entre eux
 
     """
     Version rapide et stable :
@@ -348,6 +363,13 @@ def surrogate_fast(df, col_lib, col_target, num, libs, comparaison=None, Tp=0, m
         seed = seed_surrogate
     )
 
+    '''    for i in range(1, num + 1):
+            surr_name = sur.columns[i]
+            s = sur[surr_name].to_numpy()
+            print(f'variance du surrogate {i}:',np.var(s))
+        print('variance originale:', np.var(d[col_lib].to_numpy()))
+    '''
+    
     tasks = []
     for i in range(1, num + 1):
         surr_name = sur.columns[i]
@@ -362,6 +384,113 @@ def surrogate_fast(df, col_lib, col_target, num, libs, comparaison=None, Tp=0, m
             seed_ccm,
             seed_E, 
             samples
+        ))
+
+    surrogate_rhos = []
+
+    with ProcessPoolExecutor(maxworker) as executor:
+        futures = [executor.submit(_ccm_rho_for_one_surrogatereverse, *task) for task in tasks]
+
+    for idx, fut in enumerate(as_completed(futures), start=1):
+        surrogate_rhos.append(fut.result())
+        if idx % 25 == 0 or idx == len(tasks):
+            print(f"[surrogate_fast] processed {idx}/{len(tasks)} surrogates")
+
+    surrogate_series = pd.Series(surrogate_rhos, name='rho')
+
+    resume = {
+        0.25: surrogate_series.quantile(0.25),
+        0.5: surrogate_series.median(),
+        0.75: surrogate_series.quantile(0.75),
+    }
+
+    elapsed = time.perf_counter() - start_total
+    print(f"[surrogate_fast] finished in {elapsed:.2f}s")
+
+
+    if pd.isna(comparaison):
+        return surrogate_series, resume
+
+    pvalue = (sum(r > comparaison for r in surrogate_rhos)) / (len(surrogate_rhos)) #j'enleve le +1 car peu de surrogate et pour tester la consistance des résultats
+    return surrogate_series, resume, pvalue
+
+def _ccm_rho_for_one_surrogate(date_values, lib_values, surrogate_values, col_lib, surr_name, libs, Tp=0, seed_finale=2301, seed_E=42, samples=10, E=None):
+    d = pd.DataFrame({
+        'date': date_values,
+        col_lib: lib_values,
+        surr_name: surrogate_values
+    }).dropna().reset_index(drop=True)
+
+    sur = pd.DataFrame({
+        'date': date_values,
+        surr_name: surrogate_values
+    }).dropna().reset_index(drop=True)
+
+    temp = pd.DataFrame({
+        'date': d['date'].to_numpy(),
+        col_lib: d[col_lib].to_numpy(),
+        surr_name: sur[surr_name].to_numpy()
+    }).dropna().reset_index(drop=True)
+
+    stats, tau = final_ccm(temp, col_lib, surr_name, libs=libs, Tp=Tp, seed_finale=seed_finale, samples=samples, seed_E=seed_E, E=E)
+
+    last_lib = float(libs[-1])
+    rho_med = float(stats.loc[last_lib, 0.5])
+    return rho_med
+
+def surrogate_fast(df, col_lib, col_target, num, libs, comparaison=None, Tp=0, maxworker=2, seed_ccm=2301, seed_surrogate=0, seed_E=42, method='seasonal', samples=10, fast=False): ## the one to use !!!!!!!!!!!! FUCK IT les surrogate sont sur le target pas les lib, car on surrogate la cause et non la conséquence cf : https://ha0ye.github.io/rEDM/articles/rEDM.html#edm-examples
+    """
+    - utilise SurrogateData
+    - garde la forme de sortie de la fonction surrogate
+    - évite la fragmentation de DataFrame
+    """
+    start_total = time.perf_counter()
+
+    if isinstance(libs, str):
+        libs = [int(x) for x in libs.split()]
+
+    # on garde seulement les colonnes utiles, dans l'ordre attendu par SurrogateData
+    d = df[['date', col_lib, col_target]].dropna().reset_index(drop=True)
+
+    # important : la 1ère colonne est le temps, 2e la série surrogatée
+    sur = SurrogateData(
+        dataFrame = d[['date', col_target]].copy(),
+        columns=col_target,
+        numSurrogates=num,
+        methode=method,
+        alpha=0,
+        seed = seed_surrogate
+    )
+
+    '''    for i in range(1, num + 1):
+            surr_name = sur.columns[i]
+            s = sur[surr_name].to_numpy()
+            print(f'variance du surrogate {i}:',np.var(s))
+        print('variance originale:', np.var(d[col_lib].to_numpy()))
+    '''
+    
+    tasks = []
+    if fast:
+        lib = f"1 {len(d)//2}"
+        pred = f"{len(d)//2} {len(d)}"
+        E = find_best_E_simplex(d, col_lib, col_lib, lib, pred)
+    else:
+        E=None
+
+    for i in range(1, num + 1):
+        surr_name = sur.columns[i]
+        tasks.append((
+            d['date'].to_numpy(),
+            d[col_lib].to_numpy(),
+            sur[surr_name].to_numpy(),
+            col_lib,
+            surr_name,
+            libs,
+            Tp,
+            seed_ccm,
+            seed_E,
+            samples,  
+            E
         ))
 
     surrogate_rhos = []
@@ -386,7 +515,7 @@ def surrogate_fast(df, col_lib, col_target, num, libs, comparaison=None, Tp=0, m
     print(f"[surrogate_fast] finished in {elapsed:.2f}s")
 
 
-    if comparaison is None:
+    if pd.isna(comparaison):
         return surrogate_series, resume
 
     pvalue = (sum(r > comparaison for r in surrogate_rhos)) / (len(surrogate_rhos)) #j'enleve le +1 car peu de surrogate et pour tester la consistance des résultats
@@ -408,7 +537,7 @@ def simplex_prediction(df, col_lib, col_target, lib, pred, Tp=1):
     df = _normalize_pyedm_time(df)
     n = len(col_lib.split())
     if n < 2:
-        E_best = find_best_E(df=df, col_lib=col_lib, col_target=col_target, Tp=Tp, lib=lib, pred=pred)
+        E_best = find_best_E_simplex(df=df, col_lib=col_lib, col_target=col_target, Tp=Tp, lib=lib, pred=pred)
         preds = Simplex(
             dataFrame=df,
             lib=str(lib),
@@ -458,7 +587,7 @@ def find_besttheta(df, col_lib, col_target, lib, pred, E, Tp=0):
             except Exception:
                 preds = None
 
-        if preds is None:
+        if pd.isna(preds).all(axis=None):
             rho = np.nan
         else:
             if 'Observations' not in preds.columns or 'Predictions' not in preds.columns:
@@ -477,7 +606,7 @@ def Smap_prediction(df, col_lib, col_target, lib, pred, Tp=1):
     df = _normalize_pyedm_time(df)
     n = len(col_lib.split())
     if n < 2:
-        E = find_best_E(df=df, col_lib=col_lib, col_target=col_target, lib=lib, pred=pred, Tp=Tp)
+        E = find_best_E_simplex(df=df, col_lib=col_lib, col_target=col_target, lib=lib, pred=pred, Tp=Tp)
         theta_best = find_besttheta(df, col_lib, col_target, lib, pred, E, Tp=Tp)
         preds = SMap(datFrame=df, columns=col_lib, target=col_target, lib=lib, pred=pred, E=E, Tp=Tp, theta=theta_best)
     else:
