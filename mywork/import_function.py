@@ -121,6 +121,30 @@ def detrend_mult(series, window_=90):
     detrended = series / rolling_mean
     return detrended 
 
+def filled(series):
+
+    P = 365; # période annuelle (données journalières)
+
+    mean = np.zeros(P)
+    dayCount = np.zeros(P)
+    n = len(series)
+    for i in range(n) :
+        if (~np.isnan(series[i])) :
+            day = i % P
+            mean[day] += series[i]
+            dayCount[day] +=  1
+    
+    for day in range(P) :
+        mean[day] /= max(1, dayCount[day])
+
+    fill = series.copy()
+    for i in range(n):
+        if (np.isnan(series[i])) :
+            day = i%P
+            fill[i] = mean[day]
+
+    return pd.Series(fill)
+
 ### Functions of EDM
 
 def run_simplex(ts, E, lib, pred, Tp=1):
@@ -318,18 +342,18 @@ def _ccm_rho_for_one_surrogatereverse(date_values, surrogate_values, target_valu
         'date': date_values,
         surr_name: surrogate_values,
         col_target: target_values
-    }).dropna().reset_index(drop=True)
+    }).reset_index(drop=True)
 
     sur = pd.DataFrame({
         'date': date_values,
         surr_name: surrogate_values
-    }).dropna().reset_index(drop=True)
+    }).reset_index(drop=True)
 
     temp = pd.DataFrame({
         'date': d['date'].to_numpy(),
         surr_name: sur[surr_name].to_numpy(),
         col_target: d[col_target].to_numpy()
-    }).dropna().reset_index(drop=True)
+    }).reset_index(drop=True)
 
     stats, tau = final_ccm(temp, surr_name, col_target, libs=libs, Tp=Tp, seed_finale=seed_finale, seed_E=seed_E, samples=samples)
 
@@ -351,7 +375,7 @@ def surrogate_fastreverse(df, col_lib, col_target, num, libs, comparaison=None, 
         libs = [int(x) for x in libs.split()]
 
     # on garde seulement les colonnes utiles, dans l'ordre attendu par SurrogateData
-    d = df[['date', col_lib, col_target]].dropna().reset_index(drop=True)
+    d = df[['date', col_lib, col_target]].reset_index(drop=True)
 
     # important : la 1ère colonne est le temps, 2e la série surrogatée
     sur = SurrogateData(
@@ -419,18 +443,18 @@ def _ccm_rho_for_one_surrogate(date_values, lib_values, surrogate_values, col_li
         'date': date_values,
         col_lib: lib_values,
         surr_name: surrogate_values
-    }).dropna().reset_index(drop=True)
+    }).reset_index(drop=True)
 
     sur = pd.DataFrame({
         'date': date_values,
         surr_name: surrogate_values
-    }).dropna().reset_index(drop=True)
+    }).reset_index(drop=True)
 
     temp = pd.DataFrame({
         'date': d['date'].to_numpy(),
         col_lib: d[col_lib].to_numpy(),
         surr_name: sur[surr_name].to_numpy()
-    }).dropna().reset_index(drop=True)
+    }).reset_index(drop=True)
 
     stats, tau = final_ccm(temp, col_lib, surr_name, libs=libs, Tp=Tp, seed_finale=seed_finale, samples=samples, seed_E=seed_E, E=E)
 
@@ -450,7 +474,7 @@ def surrogate_fast(df, col_lib, col_target, num, libs, comparaison=None, Tp=0, m
         libs = [int(x) for x in libs.split()]
 
     # on garde seulement les colonnes utiles, dans l'ordre attendu par SurrogateData
-    d = df[['date', col_lib, col_target]].dropna().reset_index(drop=True)
+    d = df[['date', col_lib, col_target]]
 
     # important : la 1ère colonne est le temps, 2e la série surrogatée
     sur = SurrogateData(
@@ -528,7 +552,7 @@ def _normalize_pyedm_time(df):
 
     out = df.copy()
     out['date'] = pd.to_datetime(out['date'], errors='coerce')
-    out = out.dropna(subset=['date']).sort_values('date').reset_index(drop=True)
+    out = out.sort_values('date').reset_index(drop=True)
     out['date'] = out['date'].dt.strftime('%Y-%m-%d')
     cols = ['date'] + [c for c in out.columns if c != 'date']
     return out[cols]
@@ -615,16 +639,15 @@ def Smap_prediction(df, col_lib, col_target, lib, pred, Tp=1):
         preds = SMap(dataFrame=df, columns=col_lib, target=col_target, lib=lib, pred=pred, E=E, Tp=Tp, theta=theta_best, embedded=True)
     return preds, theta_best
 
-### funciton for NLA 
+### function for NLA 
+
 def nlaObject(df, column):
     df_nla = pd.DataFrame({'time': pd.to_datetime(df['date']), column: df[column].values})
-    df_nla = df_nla.dropna()
     df_nla['time'] = (df_nla['time'] - pd.Timestamp('1970-01-01')).dt.total_seconds()
     nlaObj = CyNLA.nla(df_nla.to_numpy())
     return nlaObj, df_nla
 
 def detectCP_allmethod(series, _cpmType = 'Student', valley_check = True):
-    series = series.dropna()
     base   = series.values.tolist()
     if len(base) < 10: # too short for R package 'cpm'
         return np.nan

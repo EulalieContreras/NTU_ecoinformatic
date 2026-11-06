@@ -56,17 +56,30 @@ Reunion 2 :
 - Tp et lag_precipitaion still in suspens 
 
 A faire : 
-- negative correlations
+- negative correlations ?
 - interpretation (demander à leo)
-- detection tipping point mal faite 
+- detection tipping point mal faite ✓
 - question d'interpolation ✓
 - mauvais sens pour les surrogate !!!!!!!!!!! ✓
 - check fonction surrogate par claude et comment seasonal fonctionne ✓
 
--probleme des nan:
+-probleme des nan:✓
     - prendre en compte dans ccm, simplex et smap : modifier PrepareEmbedding et FormatOutpu avec FillTimes 
     - prendre en compte dans surrogate
     - prendre en compte dans multiview
 
 - mail question/discusion
 - notebook + article ? ✓
+
+
+a faire : 
+
+- Tp et lag_precipitaion still in suspens 
+- interpretation (demander à leo)
+- negative correlations ?
+- mail question/discusion
+- test new data 
+- verifier le délai entre groundwater et rain
+- ajouter groundwater dans tipping point
+
+

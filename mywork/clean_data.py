@@ -97,7 +97,6 @@ rivers['city'] = rivers['station_ID'].map(dico_city_rivers)
 
 rivers1 = rivers[(rivers['date'] >= '2002-04-03') & (rivers['date'] <= '2013-11-27')]
 rivers1 = rivers1[~(rivers1['city']=='BEDARRIDES')]
-rivers2 = rivers[(rivers['date'] >= '2016-03-04') & (rivers['date'] <= '2024-12-31')]
 
 missing_rows = []
 for station in rivers1['station_ID'].unique():
@@ -110,6 +109,44 @@ rivers1 = rivers1.sort_values(by=['station_ID', 'date']).reset_index(drop=True)
 
 rivers1.to_csv('mywork/donnees/rivers_02-13.csv', index=False, sep=';')
 
+
+debit_max = pd.read_csv('mywork/donnees/riviere/debit_max_16-24/export_hydro_series.csv', sep=';', skiprows = 1)
+debit_max = debit_max[surface_columns]
+debit_max.columns = ['station_ID', 'date', 'max_flow']
+debit_moyen = pd.read_csv('mywork/donnees/riviere/debit_moyen_16-24/export_hydro_series.csv', sep=';', skiprows = 1)
+debit_moyen = debit_moyen[surface_columns]
+debit_moyen.columns = ['station_ID', 'date', 'mean_flow']
+debit_min = pd.read_csv('mywork/donnees/riviere/debit_min_16-24/export_hydro_series.csv', sep=';', skiprows = 1)
+debit_min = debit_min[surface_columns]
+debit_min.columns = ['station_ID', 'date', 'min_flow']
+hauteur_max = pd.read_csv('mywork/donnees/riviere/hauteur_max_16-24/export_hydro_series.csv', sep=';', skiprows = 1)
+hauteur_max = hauteur_max[surface_columns]
+hauteur_max.columns = ['station_ID', 'date', 'max_height']
+hauteur_min = pd.read_csv('mywork/donnees/riviere/hauteur_min_16-24/export_hydro_series.csv', sep=';', skiprows = 1)
+hauteur_min = hauteur_min[surface_columns]
+hauteur_min.columns = ['station_ID', 'date', 'min_height']
+
+for df in (debit_moyen, debit_min, debit_max, hauteur_min, hauteur_max):
+    df['date'] = pd.to_datetime(df['date'], errors='coerce', format='%Y-%m-%d %H:%M:%S')
+    df['date'] = df['date'].dt.floor('D')
+    df.drop_duplicates(subset=['station_ID','date'], inplace=True)
+    df['station_ID'] = df['station_ID'].astype(str).str.strip()
+
+rivers = (
+    debit_moyen
+    .merge(debit_min,   on=['station_ID','date'], how='outer')
+    .merge(debit_max,   on=['station_ID','date'], how='outer')
+    .merge(hauteur_min, on=['station_ID','date'], how='outer')
+    .merge(hauteur_max, on=['station_ID','date'], how='outer')
+)
+
+val_cols = ['mean_flow','min_flow','max_flow','min_height','max_height'] #in m3/s for flow and in m for height
+rivers = rivers[rivers[val_cols].notna().any(axis=1)].reset_index(drop=True)
+rivers = rivers[rivers[['station_ID', 'date']].notna().all(axis=1)].reset_index(drop=True)
+rivers.drop_duplicates(subset=['station_ID','date'], inplace=True)
+rivers['city'] = rivers['station_ID'].map(dico_city_rivers)
+
+rivers2 = rivers[(rivers['date'] >= '2016-03-04') & (rivers['date'] <= '2024-12-31')]
 missing_rows = []
 for station in rivers2['station_ID'].unique():
     sous_df = rivers2[rivers2['station_ID'] == station]
