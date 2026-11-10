@@ -3,8 +3,11 @@ import unicodedata
 import numpy as np
 #test git
 ##### DATA IMPORTATION
+# https://www.coordonneesgps.net/placer-points-gps/#pts=30.828611,-82.360556,fargo,%23b45309,|31.118333,-82.265556,ware,%231d4ed8,|30.517500,-82.230556,moniac,%2340916c,|30.358611,-82.081667,mcclenny,%2340916c,|30.680556,-82.560556,fargo,%2340916c,|30.325556,-82.738333,whitesprings,%2340916c,|30.826400,-82.360600,fargo,%231d4ed8,|30.740000,-82.127800,folkston,%23b45309,|30.271700,-82.185600,mcclenny,%23b45309,|30.439200,-82.784700,whitesprings,%23b45309,|43.991235,4.958591,entraigues,%2340916c,|43.989317,4.866903,lepontet,%2340916c,|44.020060,4.976624,monteux,%2340916c,|43.933775,4.987936,thor,%2340916c,|43.921337,5.130509,fontaine%20de%20vaucluse,%2340916c,|43.901500,5.051167,isles%20sur%20la%20sorgue,%2340916c,
 
-### GROUND WATER 
+### FRANCE DATA ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# GROUNDWATER
 
 dossier_debut = 'mywork/donnees/nappes/'
 dossier_fin = '/ades_export/Quantite/chroniques.txt'
@@ -54,7 +57,7 @@ groundwater2 = groundwater2.sort_values(by=['station_ID', 'date']).reset_index(d
 
 groundwater2.to_csv('mywork/donnees/groundwater_16-24.csv', index=False, sep=';')
 
-###SURFACE WATER
+# SURFACE WATER
 
 surface_columns = ['Code de la station hydrométrique', 'Date d\'observation élaborée hydrométrique', 'Résultat de l\'observation élaborée hydrométrique']
 dico_city_rivers = {'V615502001' : 'FONTAINE DE VAUCLUSE 1', 'V615502002' : 'FONTAINE DE VAUCLUSE 2', 'V615562101' : 'BEDARRIDES'}
@@ -158,7 +161,7 @@ rivers2 = rivers2.sort_values(by=['station_ID', 'date']).reset_index(drop=True)
 
 rivers2.to_csv('mywork/donnees/rivers_16-24.csv', index=False, sep=';')
 
-### METEO
+# METEO
 
 def norm_city(s):
     if pd.isna(s):
@@ -251,3 +254,133 @@ meteo2.to_csv('mywork/donnees/meteo_16-24.csv', index=False, sep=';')
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### US DATAAAA -------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#RIVERS 
+
+moniac = pd.read_excel('/home/eulalie/Documents/eulalie/etude/cesure/taiwan/travail/usdata/okefenokee_nwr_database/iha/regional_iha_qmn_okf.xlsx', '02228500')
+mcclenny = pd.read_excel('/home/eulalie/Documents/eulalie/etude/cesure/taiwan/travail/usdata/okefenokee_nwr_database/iha/regional_iha_qmn_okf.xlsx', '02231000')
+mcclenny  = mcclenny[['Date', 'Flow']]
+mcclenny.columns = ['date', 'mean_flow']
+mcclenny['city'] = 'mcclenny'
+fargo = pd.read_excel('/home/eulalie/Documents/eulalie/etude/cesure/taiwan/travail/usdata/okefenokee_nwr_database/iha/regional_iha_qmn_okf.xlsx', '02314500')
+fargo  = fargo[['Date', 'Flow']]
+fargo.columns = ['date', 'mean_flow']
+fargo['city'] = 'fargo'
+whitesprings = pd.read_excel('/home/eulalie/Documents/eulalie/etude/cesure/taiwan/travail/usdata/okefenokee_nwr_database/iha/regional_iha_qmn_okf.xlsx', '02315500')
+whitesprings  = whitesprings[['Date', 'Flow']]
+whitesprings.columns = ['date', 'mean_flow']
+whitesprings['city'] = 'whitesprings'
+
+rivers_us = pd.DataFrame({'date': moniac['Date'], 'mean_flow': moniac['Flow'], 'city':'moniac'})
+rivers_us = pd.concat([rivers_us, fargo], ignore_index=True, join='outer')
+rivers_us = pd.concat([rivers_us, mcclenny], ignore_index=True, join='outer')
+rivers_us = pd.concat([rivers_us, whitesprings], ignore_index=True, join='outer')
+
+rivers_us['date'] = pd.to_datetime(rivers_us['date'], errors='coerce')
+rivers_us['date'] = rivers_us['date'].dt.floor('D')
+rivers_us = rivers_us[rivers_us[['city', 'date']].notna().all(axis=1)].sort_values(by = ['city', 'date']).reset_index(drop=True)
+
+missing_rows = []
+for station in rivers_us['city'].unique():
+    sous_df = rivers_us[rivers_us['city'] == station]
+    date_range = pd.date_range(start=sous_df['date'].min(), end=sous_df['date'].max(), freq='D')
+    missing_dates = date_range[~date_range.isin(sous_df['date'])]
+    missing_rows.append(pd.DataFrame({'city': station, 'date': missing_dates, 'mean_flow': np.nan}))
+rivers_us = pd.concat([rivers_us] + missing_rows, axis=0, ignore_index=True)
+rivers_us = rivers_us.sort_values(by=['city', 'date']).reset_index(drop=True)
+
+rivers_us.to_csv('mywork/donnees/rivers_us.csv', index=False, sep=';')
+
+
+
+# GROUNDWATER
+
+station1 = pd.read_excel('/home/eulalie/Documents/eulalie/etude/cesure/taiwan/travail/usdata/okefenokee_nwr_database/iha/regional_iha_dwlmn_okf.xlsx', '304942082213801')
+station1  = station1[['Date', 'Flow']]
+station1.columns = ['date', 'mean_flow']
+station1['city'] = 'fargo'
+station2 = pd.read_excel('/home/eulalie/Documents/eulalie/etude/cesure/taiwan/travail/usdata/okefenokee_nwr_database/iha/regional_iha_dwlmn_okf.xlsx', '310706082155101')
+station2  = station2[['Date', 'Flow']]
+station2.columns = ['date', 'mean_flow']
+station2['city'] = 'ware'
+
+gw_us = pd.DataFrame({'date': station1['date'], 'mean_flow': station1['mean_flow'], 'city':'fargo'})
+gw_us = pd.concat([gw_us, station2], ignore_index=True, join='outer')
+
+gw_us['date'] = pd.to_datetime(gw_us['date'], errors='coerce')
+gw_us['date'] = gw_us['date'].dt.floor('D')
+gw_us = gw_us[gw_us[['city', 'date']].notna().all(axis=1)].sort_values(by = ['city', 'date']).reset_index(drop=True)
+
+missing_rows = []
+for station in gw_us['city'].unique():
+    sous_df = gw_us[gw_us['city'] == station]
+    date_range = pd.date_range(start=sous_df['date'].min(), end=sous_df['date'].max(), freq='D')
+    missing_dates = date_range[~date_range.isin(sous_df['date'])]
+    missing_rows.append(pd.DataFrame({'city': station, 'date': missing_dates, 'mean_flow': np.nan}))
+gw_us = pd.concat([gw_us] + missing_rows, axis=0, ignore_index=True)
+gw_us = gw_us.sort_values(by=['city', 'date']).reset_index(drop=True)
+
+gw_us.to_csv('mywork/donnees/groundwater_us.csv', index=False, sep=';')
+
+
+
+## METEO
+
+fargo = pd.read_csv('/home/eulalie/Documents/eulalie/etude/cesure/taiwan/travail/usdata/meteo/fargo.csv', sep=',', decimal='.', encoding='iso-8859-1')
+fargo = fargo[['DATE', 'PRCP']]
+fargo.columns = ['date', 'precipitation']
+fargo['city'] = 'fargo'
+folkston = pd.read_csv('/home/eulalie/Documents/eulalie/etude/cesure/taiwan/travail/usdata/meteo/folkston.csv', sep=',', decimal='.', encoding='iso-8859-1')
+folkston = folkston[['DATE', 'PRCP']]
+folkston.columns = ['date', 'precipitation']
+folkston['city'] = 'folkston'
+mcclenny = pd.read_csv('/home/eulalie/Documents/eulalie/etude/cesure/taiwan/travail/usdata/meteo/mcclenny.csv', sep=',', decimal='.', encoding='iso-8859-1')
+mcclenny = mcclenny[['DATE', 'PRCP']]
+mcclenny.columns = ['date', 'precipitation']
+mcclenny['city'] = 'mcclenny'
+whitesprings = pd.read_csv('/home/eulalie/Documents/eulalie/etude/cesure/taiwan/travail/usdata/meteo/whitesprings.csv', sep=',', decimal='.', encoding='iso-8859-1')
+whitesprings = whitesprings[['DATE', 'PRCP']]
+whitesprings.columns = ['date', 'precipitation']
+whitesprings['city'] = 'whitesprings'
+
+meteo_us = pd.concat([fargo, folkston, mcclenny, whitesprings], ignore_index=True)
+
+meteo_us['date'] = pd.to_datetime(meteo_us['date'], errors='coerce')
+meteo_us['date'] = meteo_us['date'].dt.floor('D')
+meteo_us = meteo_us[meteo_us[['city', 'date']].notna().all(axis=1)].sort_values(by = ['city', 'date']).reset_index(drop=True)
+
+missing_rows = []
+for station in meteo_us['city'].unique():
+    sous_df = meteo_us[meteo_us['city'] == station]
+    date_range = pd.date_range(start=sous_df['date'].min(), end=sous_df['date'].max(), freq='D')
+    missing_dates = date_range[~date_range.isin(sous_df['date'])]
+    missing_rows.append(pd.DataFrame({'city': station, 'date': missing_dates, 'precipitation': np.nan}))
+meteo_us = pd.concat([meteo_us] + missing_rows, axis=0, ignore_index=True)
+meteo_us = meteo_us.sort_values(by=['city', 'date']).reset_index(drop=True)
+
+meteo_us.to_csv('mywork/donnees/meteo_us.csv', index=False, sep=';')

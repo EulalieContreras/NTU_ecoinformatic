@@ -78,8 +78,8 @@ a faire :
 - interpretation (demander à leo)
 - negative correlations ?
 - mail question/discusion
-- test new data 
-- verifier le délai entre groundwater et rain
-- ajouter groundwater dans tipping point
+- test new data ✓
+- ajouter groundwater dans tipping point ✓
+- recalculer les lag pour chaque notebook 
 
-
+FAIRE L'INTERPRETATION : resultat beaucoup plus mitigé sur les surrogate des autres villes !! tres interessant pourrait etre dû à l'éloignement géographique des points de mesure ou bien à autre chose de nouveau, mettre tous les points sur une carte grâce au coordonnées !
